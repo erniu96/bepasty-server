@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+BEPASTY_SERVER_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+exec bash "$BEPASTY_SERVER_ROOT/../command.txt" "$@"

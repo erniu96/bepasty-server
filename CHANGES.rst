@@ -24,6 +24,7 @@ Other changes:
   forms or permission icons; retain optional token authentication for API clients.
 - remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
   advertise unlimited file size as JSON null while retaining numeric limits.
+- listen on all IPv4 interfaces by default and provide a bash command.txt launcher.
 
 
 Release 1.2.2 (2025-05-06)

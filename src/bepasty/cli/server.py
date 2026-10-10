@@ -9,7 +9,7 @@ from ..app import create_app
 
 def main():
     argparser = argparse.ArgumentParser(prog='bepasty-server')
-    argparser.add_argument('--host', help='Host to listen on')
+    argparser.add_argument('--host', default='0.0.0.0', help='Host to listen on (default: 0.0.0.0)')
     argparser.add_argument('--port', type=int, help='Port to listen on')
     argparser.add_argument('--debug', help='Activate debug mode', action='store_true')
 

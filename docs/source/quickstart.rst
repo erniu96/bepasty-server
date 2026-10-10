@@ -68,7 +68,7 @@ environment variable like this:
 
 ::
 
-    BEPASTY_CONFIG=/srv/bepasty/bepasty.conf bepasty-server
+    BEPASTY_CONFIG=/srv/bepasty/bepasty.conf bepasty-server --host 0.0.0.0 --port 5000
 
 Important note:
 
@@ -81,7 +81,7 @@ For production, you should use a WSGI server like Gunicorn, Apache + mod_wsgi, N
 
 ::
 
-    gunicorn bepasty.wsgi
+    gunicorn --bind 0.0.0.0:5000 bepasty.wsgi
 
 
 Invoking CLI commands
