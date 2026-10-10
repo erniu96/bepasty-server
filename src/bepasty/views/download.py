@@ -31,7 +31,9 @@ class DownloadView(MethodView):
             # Stream content from storage
             offset = max(0, start)
             while offset < limit:
-                buf = _item.data.read(min(limit - offset, 16 * 1024), offset)
+                buf = _item.data.read(min(limit - offset, 256 * 1024), offset)
+                if not buf:
+                    raise OSError('Unexpected end of stored file')
                 offset += len(buf)
                 yield buf
             item.meta[TIMESTAMP_DOWNLOAD] = int(time.time())

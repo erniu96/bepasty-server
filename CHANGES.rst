@@ -1,6 +1,19 @@
 ChangeLog
 =========
 
+Unreleased
+----------
+
+Fixes:
+
+- stop downloads with an error if the stored file ends unexpectedly.
+
+Other changes:
+
+- use 256 KiB storage transfer blocks to reduce upload and download loop overhead.
+- add an HTTP transfer benchmark with downloaded SHA-256 verification and cleanup.
+
+
 Release 1.2.2 (2025-05-06)
 --------------------------
 

@@ -134,7 +134,7 @@ class Upload:
         """
         Copy data from a temporary file into storage.
         """
-        read_length = 16 * 1024
+        read_length = 256 * 1024
         size_written = 0
         hasher = hash_new()
 
