@@ -20,6 +20,8 @@ Other changes:
 - use 256 KiB storage transfer blocks to reduce upload and download loop overhead.
 - document transfer limits and add a reproducible storage microbenchmark.
 - add an HTTP transfer benchmark with downloaded SHA-256 verification and cleanup.
+- default to passwordless access for the trusted local network, without login
+  forms or permission icons; retain optional token authentication for API clients.
 - remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
   advertise unlimited file size as JSON null while retaining numeric limits.
 

@@ -62,7 +62,8 @@ def wait_background():
 
 
 @pytest.fixture
-def client_fixture(tmp_path):
+def client_fixture(tmp_path, monkeypatch):
+    monkeypatch.setattr(Config, 'PASSWORDLESS', False)
     with FakeTime() as faketime:
         Config.PERMISSIONS = {
             'admin': 'admin,list,create,modify,read,delete',

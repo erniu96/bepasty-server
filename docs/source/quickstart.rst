@@ -19,11 +19,14 @@ You can install Bepasty either from PyPI (latest release) or from the Git reposi
 
 Configuring Bepasty
 -------------------
-Before you can use bepasty, you need to carefully configure it (it won't work in default configuration and most of
-the configuration settings need your attention).
+Bepasty defaults to ``PASSWORDLESS = True`` for a trusted local network. Everyone
+who can reach the service can upload, list, read, rename and delete files, including
+previously locked files. No password, login cookie or ``SECRET_KEY`` is required.
+Older CLI credentials and browser sessions do not limit access in this mode.
 
-When setting up permissions and giving out login secrets, carefully think about whom you give which permissions,
-especially when setting up the ``DEFAULT_PERMISSIONS`` (which apply to not-logged-in users).
+Choose a persistent storage directory before starting the service. To use the
+optional password-based permissions instead, explicitly set ``PASSWORDLESS = False``
+and configure ``SECRET_KEY``, ``PERMISSIONS`` and ``DEFAULT_PERMISSIONS``.
 
 Here is the documentation straight from its config:
 
@@ -39,7 +42,7 @@ Finally, modify these configuration variables:
 ::
 
     # Note: no Config class required, just simple KEY = value lines:
-    SECRET_KEY = '........................'
+    PASSWORDLESS = True
     STORAGE = 'filesystem'
     STORAGE_FILESYSTEM_DIRECTORY = '/srv/bepasty/storage/'
     # ...
@@ -52,10 +55,9 @@ Important notes:
   **not** what you need. Due to how flask config files work, you need to
   remove the class statement and outdent all the settings, so you just have
   global KEY = VALUE statements left on the top level of the config file.
-* if you run over http (like for trying it locally / for development), you
-  need to change the configuration to use SESSION_SECURE_COOKIE = False
-  (otherwise you can not login as it won't transmit the cookie over unsecure
-  http).
+* Passwordless mode works over local HTTP without session-cookie configuration.
+  If you enable password-based login over HTTP, set ``SESSION_COOKIE_SECURE = False``
+  so the browser can send its login cookie.
 
 
 Starting the Bepasty server

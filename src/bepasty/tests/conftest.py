@@ -23,6 +23,7 @@ def testclient(request, app):
     Create a Flask test client instance for bepasty.
     """
     db_file, app.config['DATABASE'] = mkstemp()
+    app.config['PASSWORDLESS'] = False
     # reset default permissions
     app.config['DEFAULT_PERMISSIONS'] = ''
     # set up a secret key

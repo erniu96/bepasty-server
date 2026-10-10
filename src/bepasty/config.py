@@ -88,9 +88,14 @@ class Config:
     #: Filesystem storage path
     STORAGE_FILESYSTEM_DIRECTORY = '/tmp/'
 
-    #: Server secret key needed for safe session cookies.
+    #: Allow everyone on a trusted network to upload, list, read, modify and delete
+    #: items, including existing locked items. Login and logout are disabled.
+    #: Set this to False to enable the optional password-based permissions below.
+    PASSWORDLESS = True
+
+    #: Server secret key needed for safe session cookies when PASSWORDLESS is False.
     #: You must set a very long (20–100 chars), very random, very secret string here,
-    #: otherwise bepasty will not work (and will crash when trying to log in)!
+    #: before using password-based login. Passwordless mode does not require it.
     SECRET_KEY = ''
 
     #: Transmit cookie only over HTTPS (if you use HTTP, set this to False)
@@ -102,7 +107,7 @@ class Config:
     #: lifetime of the permanent session (in seconds)
     PERMANENT_SESSION_LIFETIME = 31 * 24 * 3600
 
-    #: Bepasty does **not** use the usual user/password scheme, but **only**
+    #: When PASSWORDLESS is False, Bepasty does **not** use the usual user/password scheme, but **only**
     #: uses passwords (or passphrases - we'll call both "a secret" below) as
     #: log-in credentials - there are no separate user names.
     #:
@@ -132,7 +137,7 @@ class Config:
         # 'foo': 'admin,list,create,modify,read,delete',
     }
 
-    #: Not logged-in users get these permissions -
+    #: When PASSWORDLESS is False, not logged-in users get these permissions -
     #: usually they are either no permissions ('') or read-only ('read').
     DEFAULT_PERMISSIONS = ''
 

@@ -34,9 +34,12 @@ def lookup_permissions(token):
 
 def get_permissions():
     """
-    Get the permissions for the current user (if logged in)
-    or the default permissions (if not logged in).
+    Grant all permissions on trusted passwordless sites, otherwise use
+    credentials or the configured anonymous permissions.
     """
+    if current_app.config['PASSWORDLESS']:
+        # Old sessions and CLI credentials must not reduce trusted-network access.
+        return {ADMIN, LIST, CREATE, MODIFY, READ, DELETE}
     auth = request.authorization
     if auth:
         # HTTP Basic auth header present
@@ -71,4 +74,7 @@ def logged_in():
     """
     Is the user logged in?
     """
+    if current_app.config['PASSWORDLESS']:
+        # No session is needed, including when SECRET_KEY is left unset.
+        return False
     return session.get(LOGGEDIN, False)
