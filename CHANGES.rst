@@ -45,6 +45,13 @@ Other changes:
 - remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
   advertise unlimited file size as JSON null while retaining numeric limits.
 - listen on all IPv4 interfaces by default and provide a bash command.txt launcher.
+- align the header and every page to one centered column; let list previews
+  and share links span the full row width.
+- upload pasted screenshots and files directly, copy the link of a single
+  finished share automatically, submit text with Ctrl/Cmd+Enter, and remember
+  one shared retention choice for files, text and collections.
+- rename and delete list items in place with confirmation; collapse upload QR
+  codes behind a button on narrow screens.
 - honour X-Forwarded-Proto only from TRUSTED_SCHEME_PROXY_IPS, so share
   links use https behind a trusted TLS gateway.
 - require MODIFY (not CREATE) to rename, serialize renames with uploads,

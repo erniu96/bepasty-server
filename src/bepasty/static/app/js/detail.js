@@ -28,6 +28,11 @@ $(function () {
         select($(this).attr('data-detail-view'));
     });
     select($('[data-detail-panel=preview]').length ? 'preview' : 'info');
+    $(document).on('submit', '#del-frm, .delete-form', function (event) {
+        if (!window.confirm('删除这个文件？分享链接会立即失效。')) {
+            event.preventDefault();
+        }
+    });
     var storedType = $('#contenttype').val();
     var saving = false;
     $('#modify-frm').on('submit', function (event) {

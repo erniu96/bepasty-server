@@ -13,43 +13,42 @@
 <div class="file-list" role="list">
     {% for file in files %}
     {% set complete = file.get('complete', True) %}
-    <article class="file-row" role="listitem">
-        <div class="file-row-main">
-            {% if complete and file['type'].startswith('image/') %}
-            <a class="file-thumbnail" href="{{ url_for('bepasty.display', name=file['id']) }}" tabindex="-1" aria-hidden="true"{% if workspace %} target="_blank" rel="noopener"{% endif %}>
-                <img src="{{ url_for('bepasty.thumbnail', name=file['id']) }}" width="72" height="72" alt="" loading="lazy">
-            </a>
-            {% endif %}
-            <div class="file-row-info">
-                <h2 class="file-row-name h5">
-                    {% if complete %}<a href="{{ url_for('bepasty.display', name=file['id']) }}" title="{{ file['filename'] or file['id'] }}"{% if workspace %} target="_blank" rel="noopener"{% endif %}>{{ file['filename'] or file['id'] }}</a>
-                    {% else %}{{ file['filename'] or file['id'] }}{% endif %}
-                </h2>
-                <p class="file-row-meta">
-                    <span>{{ filesize(file['size']) }}</span>
-                    <span>到期：{{ expiry(file.get('timestamp-max-life', -1)) }}</span>
-                    {% if not complete %}<span class="file-state">上传未完成</span>{% endif %}
-                </p>
-                {% if file.get("text_head") is not none and "text_head" in file %}<pre class="text-head">{{ file["text_head"] }}</pre>{% endif %}
-            </div>
+    {% set has_thumb = complete and file['type'].startswith('image/') %}
+    <article class="file-row{% if has_thumb %} has-thumb{% endif %}" role="listitem" data-name="{{ file['id'] }}">
+        {% if has_thumb %}
+        <a class="file-thumbnail" href="{{ url_for('bepasty.display', name=file['id']) }}" tabindex="-1" aria-hidden="true"{% if workspace %} target="_blank" rel="noopener"{% endif %}>
+            <img src="{{ url_for('bepasty.thumbnail', name=file['id']) }}" width="56" height="56" alt="" loading="lazy">
+        </a>
+        {% endif %}
+        <div class="file-row-info">
+            <h2 class="file-row-name h5">
+                {% if complete %}<a href="{{ url_for('bepasty.display', name=file['id']) }}" title="{{ file['filename'] or file['id'] }}"{% if workspace %} target="_blank" rel="noopener"{% endif %}>{{ file['filename'] or file['id'] }}</a>
+                {% else %}{{ file['filename'] or file['id'] }}{% endif %}
+            </h2>
+            <p class="file-row-meta">
+                <span>{{ filesize(file['size']) }}</span>
+                <span>到期：{{ expiry(file.get('timestamp-max-life', -1)) }}</span>
+                {% if not complete %}<span class="file-state">上传未完成</span>{% endif %}
+            </p>
         </div>
         <div class="file-row-actions">
             {% if complete %}
-            <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-primary">下载</a>
+            <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-outline-secondary">下载</a>
             {{ copy_button(url_for('bepasty.download', name=file['id']), file['type'], file['size']) }}
             {% else %}
             <a href="{{ url_for('bepasty.index') }}" class="btn btn-outline-secondary">返回上传</a>
             {% endif %}
-                {% if complete and may(MODIFY) %}
-                <a href="{{ url_for('bepasty.modify', name=file['id']) }}" class="btn btn-outline-secondary"{% if workspace %} target="_blank" rel="noopener"{% endif %}>修改名称</a>
-                {% endif %}
-                {% if may(DELETE) %}
-                <form action="{{ url_for('bepasty.delete', name=file['id']) }}" method="post"{% if workspace %} target="_blank"{% endif %}>
-                    <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
-                    <button type="submit" class="btn btn-outline-danger">{% if complete %}删除文件{% else %}取消并删除{% endif %}</button>
-                </form>
-                {% endif %}
+            {% if complete and may(MODIFY) %}
+            <a href="{{ url_for('bepasty.modify', name=file['id']) }}" class="btn btn-outline-secondary rename-link"{% if workspace %} target="_blank" rel="noopener"{% endif %}>重命名</a>
+            {% endif %}
+            {% if may(DELETE) %}
+            <form class="delete-form" action="{{ url_for('bepasty.delete', name=file['id']) }}" method="post"{% if workspace %} target="_blank"{% endif %}>
+                <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
+                <button type="submit" class="btn btn-outline-danger">{% if complete %}删除{% else %}取消并删除{% endif %}</button>
+            </form>
+            {% endif %}
         </div>
+        {% if file.get("text_head") is not none and "text_head" in file %}<pre class="text-head">{{ file["text_head"] }}</pre>{% endif %}
         {% if complete %}
         {{ share_link(url_for('bepasty.display', name=file['id'], _external=not workspace)) }}
         {% endif %}
@@ -106,7 +105,7 @@
     <p class="share-link-label">分享链接</p>
     <div class="share-link-controls">
         <input class="form-control" type="text" value="{{ url }}" readonly aria-label="分享链接" autocapitalize="none" spellcheck="false">
-        <button class="btn btn-outline-secondary copy-link" type="button" style="display: none">复制链接</button>
+        <button class="btn btn-primary copy-link" type="button" style="display: none">复制链接</button>
     </div>
     <small class="share-status d-block" role="status" aria-live="polite"></small>
 </div>

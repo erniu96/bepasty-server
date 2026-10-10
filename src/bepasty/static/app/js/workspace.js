@@ -7,21 +7,47 @@ $(function () {
             !('flex' in style)) {
         return;
     }
-    var mode = 'file', page = 'upload', listLoaded = false, listRequest = null, generation = 0,
+    var page = 'upload', listLoaded = false, listRequest = null, generation = 0,
         listLink = $('.primary-nav [data-workspace-page=list]'),
-        queue = $('#files'), empty = $('#upload-empty');
+        queue = $('#files'), results = $('.upload-results'), batch = [],
+        maxlifeKey = 'bepasty.maxlife-preset';
 
-    function selectMode(next) {
-        mode = next === 'text' ? 'text' : 'file';
-        // Both composers stay expanded; old #text links remain compatible.
-        $('#file-composer, #text-composer').show();
-        empty.find('p').text(mode === 'text' ? '粘贴文字，生成分享链接' : '选择文件，或直接拖到这里');
-        empty.find('small').text(mode === 'text' ? '生成后，在这里复制链接' : '上传完成后，在这里复制链接');
-        $('[data-upload-mode]').each(function () {
-            var button = $(this), active = button.attr('data-upload-mode') === mode;
-            button.toggleClass('btn-primary', active).toggleClass('btn-outline-secondary', !active)
-                .attr('aria-pressed', active ? 'true' : 'false');
+    function storage(key, value) {
+        // Private windows and blocked site data may throw; the default still works.
+        try {
+            if (value === undefined) {
+                return window.localStorage.getItem(key);
+            }
+            window.localStorage.setItem(key, value);
+        } catch (error) {
+            return null;
+        }
+        return null;
+    }
+
+    // One retention control for files, text and collections.
+    function setupMaxlife() {
+        var shared = $('#shared-maxlife'), source = $('#upload-maxlife-preset'),
+            selects = root.find('select[name=maxlife-preset]');
+        if (!shared.length || !source.length) {
+            return;
+        }
+        shared.html(source.html());
+        var saved = storage(maxlifeKey);
+        if (saved && shared.find('option').filter(function () { return this.value === saved; }).length) {
+            shared.val(saved);
+        } else {
+            shared.val(source.val());
+        }
+        function sync() {
+            selects.val(shared.val());
+        }
+        shared.on('change', function () {
+            sync();
+            storage(maxlifeKey, shared.val());
         });
+        sync();
+        $('.shared-maxlife').prop('hidden', false);
     }
 
     function filterList() {
@@ -93,13 +119,13 @@ $(function () {
     function showHash() {
         var initialList = !window.location.hash && $('body').hasClass('library-entry');
         selectPage(window.location.hash === '#list' || initialList ? 'list' : 'upload');
-        if (page === 'upload') {
-            selectMode(window.location.hash === '#text' ? 'text' : 'file');
+        if (page === 'upload' && window.location.hash === '#text') {
+            $('#formupload').focus();
         }
     }
 
     function go(next) {
-        var hash = next === 'list' ? '#list' : mode === 'text' ? '#text' : '#upload';
+        var hash = next === 'list' ? '#list' : '#upload';
         if (window.location.hash !== hash) {
             window.location.hash = hash;
         }
@@ -121,6 +147,9 @@ $(function () {
             success: function (result) {
                 if (!uploads.addComplete(result, isCollection)) {
                     feedback.text('服务器返回的分享结果异常，请查看列表确认。');
+                } else if (!isCollection) {
+                    // Ready for the next paste; the shared link is in the results.
+                    form.find('textarea, #filename').val('');
                 }
             },
             error: function (xhr) {
@@ -134,31 +163,220 @@ $(function () {
         });
     }
 
+    function writeClipboard(text) {
+        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+            return null;
+        }
+        try {
+            return navigator.clipboard.writeText(text);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // Copy a single finished share at once. Browsers that need a fresh click
+    // simply refuse, and the visible "复制链接" button remains.
+    function autoCopy(context) {
+        var input = context.find('.share-link input'), button = context.find('.copy-link'),
+            status = context.find('.share-status'), writing = writeClipboard(input.val());
+        if (writing && typeof writing.then === 'function') {
+            writing.then(function () {
+                queue.find('.share-status').not(status).text('');
+                button.text('已复制');
+                status.text('链接已自动复制，可以直接粘贴。');
+                window.setTimeout(function () { button.text('复制链接'); }, 2500);
+            }, function () {});
+        }
+    }
+
+    function enhanceResult(context) {
+        var share = context.find('.share-link'), qr = share.find('.upload-qr');
+        if (!share.length || share.data('enhanced')) {
+            return;
+        }
+        share.data('enhanced', true);
+        if (qr.length) {
+            $('<button type="button" class="btn btn-outline-secondary qr-toggle" aria-expanded="false"/>')
+                .text('二维码').appendTo(share.find('.share-link-controls'))
+                .on('click', function () {
+                    var open = !share.hasClass('qr-open');
+                    share.toggleClass('qr-open', open);
+                    $(this).attr('aria-expanded', open ? 'true' : 'false');
+                });
+        }
+    }
+
+    function processing() {
+        return queue.children('.alert-processing').length;
+    }
+
     window.BepastyWorkspace = {
-        added: function () {
-            empty.hide();
+        added: function (context) {
+            // A batch is everything selected while earlier uploads still run.
+            if (!queue.children('.alert-processing').not(context).length) {
+                batch = [];
+            }
+            if (context && $.inArray(context[0], batch) === -1) {
+                batch.push(context[0]);
+            }
+            results.removeClass('is-empty');
             // New selections, including drops while looking at the library,
             // return to the queue without destroying either view.
             go('upload');
-            queue[0].scrollTop = queue[0].scrollHeight;
+            if (context && context[0] && context[0].scrollIntoView) {
+                window.setTimeout(function () {
+                    context[0].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+                }, 0);
+            }
         },
         changed: function (context) {
             generation++;
             listLoaded = false;
-            // The final link controls increase the new row's height. Position
-            // after rendering them, without jumping to older completed files.
-            if (page === 'upload' && context && context[0] === queue.children().last()[0]) {
-                queue[0].scrollTop = queue[0].scrollHeight;
+            if (!context) {
+                return;
+            }
+            enhanceResult(context);
+            if (context.hasClass('alert-success') && !processing()) {
+                if (batch.length === 1 && batch[0] === context[0]) {
+                    autoCopy(context);
+                }
+                batch = [];
             }
         }
     };
 
-    $('body').addClass('workspace-enabled');
-    $('.upload-mode-nav').hide();
-    $('[data-upload-mode]').on('click', function () {
-        selectMode($(this).attr('data-upload-mode'));
-        go('upload');
+    function pastedFiles(event) {
+        var data = event.originalEvent && event.originalEvent.clipboardData, files = [];
+        if (!data) {
+            return files;
+        }
+        if (data.files && data.files.length) {
+            files = $.makeArray(data.files);
+        } else if (data.items) {
+            $.each(data.items, function (index, item) {
+                var file = item.kind === 'file' && item.getAsFile();
+                if (file) {
+                    files.push(file);
+                }
+            });
+        }
+        return $.map(files, function (file) {
+            // Screenshots arrive as "image.png"; give each a distinct name.
+            if (/^image\.\w+$/.test(file.name || '') && window.File) {
+                var now = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n; },
+                    stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '-' +
+                        pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+                try {
+                    return new File([file], '截图-' + stamp + file.name.replace(/^image/, ''), {type: file.type});
+                } catch (error) {
+                    return file;
+                }
+            }
+            return file;
+        });
+    }
+
+    $(document).on('paste', function (event) {
+        var data = event.originalEvent && event.originalEvent.clipboardData,
+            text = data && data.getData && data.getData('text/plain'),
+            inField = $(event.target).is('input, textarea, select, [contenteditable]');
+        // Office apps put a picture next to copied text; text wins there.
+        if (!text) {
+            var files = pastedFiles(event);
+            if (files.length) {
+                event.preventDefault();
+                $('#fileupload').fileupload('add', {files: files});
+            }
+            return;
+        }
+        // Plain text pasted outside any field goes into the text composer.
+        if (page === 'upload' && !inField) {
+            event.preventDefault();
+            var area = $('#formupload');
+            area.val(area.val() + text).focus();
+            area[0].setSelectionRange(area.val().length, area.val().length);
+        }
     });
+
+    $('#formupload').on('keydown', function (event) {
+        if (event.keyCode === 13 && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            $('#text-form').submit();
+        }
+    });
+
+    // Library: rename in place and delete without leaving the page.
+    $('#library-content').on('click', '.rename-link', function (event) {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+            return;
+        }
+        event.preventDefault();
+        var row = $(this).closest('.file-row'), heading = row.find('.file-row-name'),
+            link = heading.find('a'), url = $(this).attr('href'), original = link.text();
+        if (row.hasClass('renaming')) {
+            heading.find('input').focus();
+            return;
+        }
+        row.addClass('renaming');
+        var input = $('<input type="text" class="form-control rename-input" autocapitalize="off" spellcheck="false"/>')
+            .attr('aria-label', '新文件名').val(original);
+        link.hide().after(input);
+        input.focus();
+        var dot = original.lastIndexOf('.');
+        input[0].setSelectionRange(0, dot > 0 ? dot : original.length);
+        function finish() {
+            input.remove();
+            link.show();
+            row.removeClass('renaming');
+        }
+        function save() {
+            var name = $.trim(input.val());
+            if (!name || name === original) {
+                finish();
+                return;
+            }
+            input.prop('disabled', true);
+            $.ajax({url: url, type: 'POST', data: {filename: name}, dataType: 'json',
+                headers: {Accept: 'application/json'}})
+                .done(function (result) {
+                    link.text(result.filename).attr('title', result.filename);
+                    generation++;
+                }).fail(function () {
+                    $('#library-feedback').text('重命名失败，请重试。');
+                }).always(finish);
+        }
+        input.on('keydown', function (e) {
+            if (e.keyCode === 13) {
+                e.preventDefault();
+                save();
+            } else if (e.keyCode === 27) {
+                finish();
+            }
+        }).on('blur', save);
+    });
+    $('#library-content').on('submit', '.delete-form', function (event) {
+        event.preventDefault();
+        var form = $(this), row = form.closest('.file-row'),
+            name = $.trim(row.find('.file-row-name').text());
+        if (!window.confirm('删除“' + name + '”？分享链接会立即失效。')) {
+            return;
+        }
+        form.find('button').prop('disabled', true);
+        $.ajax({url: form.attr('action'), type: 'POST', data: form.serialize()})
+            .done(function () {
+                row.remove();
+                generation++;
+                filterList();
+            }).fail(function () {
+                form.find('button').prop('disabled', false);
+                $('#library-feedback').text('删除失败，请刷新后重试。');
+            });
+    });
+
+    $('body').addClass('workspace-enabled');
+    $('#fileupload-label').text('选择文件，或拖到这里');
+    $('#fileupload-help').text('可多选 · 也能直接粘贴截图 · 选好即上传');
+    setupMaxlife();
     $('.primary-nav [data-workspace-page], .site-brand').on('click', function (event) {
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
             return;
@@ -176,6 +394,12 @@ $(function () {
     });
     $('#library-search').on('input keyup', filterList);
     $('#library-refresh').on('click', loadList);
+    $(document).on('keydown', function (event) {
+        if (event.key === '/' && page === 'list' && !$(event.target).is('input, textarea, select')) {
+            event.preventDefault();
+            $('#library-search').focus();
+        }
+    });
     $('#text-form').on('submit', function (event) {
         event.preventDefault();
         submitForm($(this), false);
@@ -185,19 +409,9 @@ $(function () {
         submitForm($(this), true);
     });
     $(window).on('hashchange', showHash);
-    function sizeWorkspace() {
-        // Old mobile Safari needs innerHeight; new Safari also reports the
-        // visible height when its keyboard or browser chrome changes.
-        var height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        $('#main-content').css('height', Math.max(0, height - $('#header').outerHeight()) + 'px');
-    }
-    $(window).on('resize orientationchange', sizeWorkspace);
-    if (window.visualViewport && window.visualViewport.addEventListener) {
-        window.visualViewport.addEventListener('resize', sizeWorkspace);
-    }
 
     // The blueimp drop handler accepts files on the whole document. Highlight
-    // the queue without relying on dragleave firing for every child element.
+    // the drop target without relying on dragleave firing for every child.
     var dragDepth = 0;
     $(document).on('dragenter', function (event) {
         var transfer = event.originalEvent && event.originalEvent.dataTransfer;
@@ -215,5 +429,4 @@ $(function () {
         root.removeClass('drag-active');
     });
     showHash();
-    sizeWorkspace();
 });

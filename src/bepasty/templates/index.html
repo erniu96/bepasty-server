@@ -29,43 +29,43 @@
         <section class="composer" aria-label="新建分享">
             <div class="composer-heading">
                 <h1>分享文件与文字</h1>
-                <div class="upload-mode-nav" aria-label="分享方式" style="display: none">
-                    <button type="button" class="btn btn-primary" data-upload-mode="file" aria-pressed="true" aria-controls="file-composer">文件</button>
-                    <button type="button" class="btn btn-outline-secondary" data-upload-mode="text" aria-pressed="false" aria-controls="text-composer">文字</button>
+                <div class="shared-maxlife" hidden>
+                    <label for="shared-maxlife">保留</label>
+                    <select class="form-control" id="shared-maxlife" aria-label="文件和文字的保留时间"></select>
                 </div>
             </div>
             <section id="file-composer" class="upload-panel" aria-labelledby="fileupload-heading">
-                <h2 id="fileupload-heading">上传文件</h2>
+                <h2 id="fileupload-heading" class="sr-only">上传文件</h2>
                 <form id="upload-form" action="{{ url_for('bepasty.upload') }}" method="post" enctype="multipart/form-data">
-                    <div class="file-toolbar">
-                        <span class="btn btn-primary fileinput-button dropzone">
-                            <span class="upload-symbol" aria-hidden="true">↑</span>
-                            <span id="fileupload-label">选择文件</span>
-                            <input id="fileupload" type="file" name="file" aria-label="选择文件上传" aria-describedby="fileupload-help fileupload-limit">
+                    <span class="fileinput-button dropzone">
+                        <span class="upload-symbol" aria-hidden="true">↑</span>
+                        <span class="dropzone-text">
+                            <strong id="fileupload-label">选择文件</strong>
+                            <small id="fileupload-help">选择文件后点“上传”。上传时请保持页面打开。</small>
                         </span>
+                        <input id="fileupload" type="file" name="file" aria-label="选择文件上传" aria-describedby="fileupload-help fileupload-limit">
+                    </span>
+                    <div class="file-toolbar">
                         {{ maximum_lifetime() }}
                         <button id="fileupload-submit" type="submit" class="btn btn-primary">上传</button>
                     </div>
-                    <div class="upload-hints">
-                        <p id="fileupload-help" class="form-text text-muted">选择文件后点“上传”。上传时请保持页面打开。</p>
-                        <p id="fileupload-limit" class="upload-limit text-muted">
-                            {% if config.MAX_ALLOWED_FILE_SIZE is none %}
-                            无固定大小上限
-                            {% else %}
-                            单个文件最大 {{ utils.filesize(config.MAX_ALLOWED_FILE_SIZE) }}
-                            {% endif %}
-                        </p>
-                    </div>
+                    <p id="fileupload-limit" class="upload-limit">
+                        {% if config.MAX_ALLOWED_FILE_SIZE is none %}
+                        无固定大小上限
+                        {% else %}
+                        单个文件最大 {{ utils.filesize(config.MAX_ALLOWED_FILE_SIZE) }}
+                        {% endif %}
+                    </p>
                 </form>
             </section>
             <section id="text-composer" class="text-upload upload-panel" aria-labelledby="textupload-heading">
-                <h2 id="textupload-heading">粘贴文字</h2>
+                <h2 id="textupload-heading">或者粘贴文字</h2>
                 <form id="text-form" action="{{ url_for('bepasty.upload') }}" method="post">
                     <label class="sr-only" for="formupload">要分享的文字</label>
                     <textarea class="form-control" id="formupload" name="text" placeholder="把文字粘贴到这里…" required spellcheck="false" autocapitalize="off"></textarea>
                     <div class="text-fields">
-                        <div class="form-group">
-                            <label for="filename">标题 <span class="text-muted">（选填，留空由 Qwen 生成）</span></label>
+                        <div class="form-group title-field">
+                            <label for="filename">标题 <span class="text-muted">（选填，留空自动生成）</span></label>
                             {{ utils.input_filename() }}
                         </div>
                         {{ maximum_lifetime('text') }}
@@ -75,7 +75,7 @@
                 </form>
             </section>
         </section>
-        <section class="upload-results" aria-labelledby="upload-results-heading">
+        <section class="upload-results is-empty" aria-labelledby="upload-results-heading">
             <div class="results-heading">
                 <h2 id="upload-results-heading">本次分享</h2>
                 <p id="fileupload-progress-label" class="upload-progress-label" role="status" aria-live="polite"></p>
@@ -89,28 +89,23 @@
                 <input id="filelist-filename" name="filename" type="hidden" value="文件合集">
                 {{ maximum_lifetime('list') }}
                 <input type="hidden" name="contenttype" value="text/x-bepasty-list">
-                <button class="btn btn-outline-secondary" type="submit">合并分享</button>
+                <button class="btn btn-outline-secondary" type="submit">合并成一个链接</button>
                 <input type="hidden" id="filelist" name="text" value="">
                 <p class="form-feedback" role="alert"></p>
             </form>
-            <div id="upload-empty" class="queue-empty">
-                <span class="empty-upload-symbol" aria-hidden="true">↑</span>
-                <p>选择文件，或直接拖到这里</p>
-                <small>上传完成后，在这里复制链接</small>
-            </div>
-            <div id="files" class="files queue-scroll" role="region" aria-label="上传进度和分享链接" tabindex="0"></div>
+            <div id="files" class="files" role="region" aria-label="上传进度和分享链接"></div>
         </section>
     </div>
     <section id="library-view" class="workspace-view" aria-labelledby="library-heading" style="display: none">
         <div class="library-toolbar">
             <h1 id="library-heading">文件列表</h1>
             <label class="sr-only" for="library-search">查找文件名</label>
-            <input id="library-search" type="search" class="form-control" placeholder="查找文件名…">
-            <button id="library-refresh" type="button" class="btn btn-outline-secondary">刷新</button>
+            <input id="library-search" type="search" class="form-control" placeholder="查找文件名…" title="快捷键：/" autocomplete="off">
+            <button id="library-refresh" type="button" class="btn btn-outline-secondary" aria-label="刷新列表">刷新</button>
         </div>
         <p id="library-search-feedback" class="form-feedback" role="status" aria-live="polite"></p>
         <p id="library-feedback" class="form-feedback" role="status" aria-live="polite"></p>
-        <div id="library-content" class="queue-scroll" role="region" aria-label="服务器文件列表" tabindex="0"></div>
+        <div id="library-content" role="region" aria-label="服务器文件列表"></div>
     </section>
 </div>
 {% else %}
