@@ -27,6 +27,11 @@ class Config:
     #: uploaded file, set this to True.
     UPLOAD_LOCKED = False
 
+    #: Generate titles for unnamed plain-text shares using local Ollama.
+    #: Disabled by default; failures preserve the readable fallback name.
+    AUTO_TITLES = False
+    TITLE_MODEL = 'qwen3.5:4b'
+
     #: The asciinema player theme (one of asciinema, tango, solarized-dark,
     #: solarized-light, monokai)
     ASCIINEMA_THEME = 'asciinema'

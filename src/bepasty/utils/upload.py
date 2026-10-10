@@ -169,11 +169,23 @@ def create_item(f, filename, size, content_type, content_type_hint,
     """
     size = Upload.filter_size(size)
     name = ItemName.create(current_app.storage)
+    auto_title = (not filename and current_app.config.get('AUTO_TITLES', False)
+                  and (content_type or content_type_hint) == 'text/plain')
+    if auto_title:
+        filename = '文字分享.txt'
     with current_app.storage.create(name, size) as item:
         size_written, file_hash = Upload.data(item, f, size)
         Upload.meta_new(item, size, filename, content_type, content_type_hint,
                         name, maxlife_stamp=maxlife_stamp)
         Upload.meta_complete(item, file_hash)
+        if auto_title:
+            item.meta['auto-title-pending'] = True
+    if auto_title:
+        from .title import schedule_title
+        if not schedule_title(current_app.storage, name, filename,
+                              current_app.config.get('TITLE_MODEL', 'qwen3.5:4b')):
+            with upload_lock(current_app.storage, name), current_app.storage.openwrite(name) as item:
+                item.meta['auto-title-pending'] = False
     return name
 
 

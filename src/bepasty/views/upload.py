@@ -138,6 +138,7 @@ class UploadContinueView(MethodView):
             files.append({
                 'name': name,
                 'filename': item.meta[FILENAME],
+                'title_pending': bool(item.meta.get('auto-title-pending', False)),
                 'status_url': url_for('bepasty.upload_continue', name=name),
                 'size': item.meta[SIZE],
                 'url': '{}#{}'.format(url_for('bepasty.display', name=name), item.meta[FILENAME]),
