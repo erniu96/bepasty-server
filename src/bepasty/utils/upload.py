@@ -53,7 +53,10 @@ class Upload:
             i = int(i)
         except (ValueError, TypeError):
             raise BadRequest(description='Size is invalid')
-        if i > current_app.config['MAX_ALLOWED_FILE_SIZE']:
+        if i < 0:
+            raise BadRequest(description='Size is invalid')
+        limit = current_app.config['MAX_ALLOWED_FILE_SIZE']
+        if limit is not None and i > limit:
             raise RequestEntityTooLarge()
         return i
 
@@ -163,6 +166,7 @@ def create_item(f, filename, size, content_type, content_type_hint,
     """
     Create an item from an open file <f> with the given metadata and return the item name.
     """
+    size = Upload.filter_size(size)
     name = ItemName.create(current_app.storage)
     with current_app.storage.create(name, size) as item:
         size_written, file_hash = Upload.data(item, f, size)

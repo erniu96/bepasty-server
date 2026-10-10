@@ -52,14 +52,12 @@ GET Response by the server:
     Example Response::
 
         {
-          MAX_ALLOWED_FILE_SIZE: 5000000000,
-          MAX_BODY_SIZE: 1048576
+          "MAX_ALLOWED_FILE_SIZE": null,
+          "MAX_BODY_SIZE": 1040384
         }
 
     This interface provides important information for uploading and
-    downloading files to your Bepasty server. For now, only
-    MAX_BODY_SIZE is provided, as no more information is
-    available.
+    downloading files to your Bepasty server.
 
     MAX_BODY_SIZE
         The maximum size of a POST request body. This is limited by
@@ -69,8 +67,10 @@ GET Response by the server:
 
     MAX_ALLOWED_FILE_SIZE
         The maximum allowed file size that can be stored on the
-        server. File uploads bigger than this limit will be aborted
-        and the file on the server will be deleted.
+        server, in bytes. ``null`` (the default) means there is no
+        application file size limit. Disk capacity, client capabilities
+        and web server request limits still apply. A configured numeric
+        limit rejects oversized upload metadata before storage is created.
 
 Uploading a file
 ================

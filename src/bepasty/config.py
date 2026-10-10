@@ -28,8 +28,9 @@ class Config:
     ASCIINEMA_THEME = 'asciinema'
 
     #: The site admin can set some maximum allowed file size he wants to
-    #: accept here. This is the maximum size an uploaded file may have.
-    MAX_ALLOWED_FILE_SIZE = 5 * 1000 * 1000 * 1000
+    #: accept here, in bytes. None means no application file size limit.
+    #: Storage capacity and web server request limits still apply.
+    MAX_ALLOWED_FILE_SIZE = None
 
     #: The maximum HTTP request body size.
     #: This information is provided to REST API clients so they can adjust

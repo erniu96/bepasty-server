@@ -7,11 +7,15 @@ Unreleased
 Fixes:
 
 - stop downloads with an error if the stored file ends unexpectedly.
+- reject negative or oversized metadata before creating storage, and check
+  native uploads against configured size limits before copying their contents.
 
 Other changes:
 
 - use 256 KiB storage transfer blocks to reduce upload and download loop overhead.
 - add an HTTP transfer benchmark with downloaded SHA-256 verification and cleanup.
+- remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
+  advertise unlimited file size as JSON null while retaining numeric limits.
 
 
 Release 1.2.2 (2025-05-06)
