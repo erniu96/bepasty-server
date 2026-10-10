@@ -58,6 +58,8 @@ Other changes:
   allow changing the retention period and return JSON to enhanced pages.
 - optionally name unnamed text shares with a local Ollama model
   (AUTO_TITLES, TITLE_MODEL); the upload responds before the title is ready.
+- show the first lines of text files in the list and render .txt files
+  as linked plain text.
 
 
 Release 1.2.2 (2025-05-06)

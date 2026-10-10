@@ -14,6 +14,7 @@ from ..utils.date_funcs import delete_if_lifetime_over
 from ..utils.formatters import CustomHtmlFormatter
 from ..utils.permissions import ADMIN, READ, may
 
+from ..utils.text_preview import is_txt, linked_text
 from .index import contenttypes_list
 from .filelist import file_infos
 
@@ -90,7 +91,7 @@ class DisplayView(MethodView):
                     if ct == 'text/x-bepasty-list':
                         is_list_item = True
                         names = read_data(item).decode('utf-8').splitlines()
-                        files = sorted(file_infos(names), key=lambda f: f[FILENAME])
+                        files = sorted(file_infos(names, preview=True), key=lambda f: f[FILENAME])
                         if view == 'normal':
                             rendered_content = Markup(render_template('filelist_tableonly.html', files=files))
                         elif view == 'carousel':
@@ -136,10 +137,13 @@ class DisplayView(MethodView):
                     except UnicodeDecodeError:
                         # Well, it is not UTF-8 or ASCII, so we can only guess...
                         text = text.decode('iso-8859-1')
-                    lexer = get_lexer_for_mimetype(ct_pygments)
-                    formatter = CustomHtmlFormatter(linenos='table', lineanchors="L",
-                                                    lineparagraphs="L", anchorlinenos=True)
-                    rendered_content = Markup(highlight(text, lexer, formatter))
+                    if is_txt(item.meta):
+                        rendered_content = Markup('<pre class="text-content">{}</pre>').format(linked_text(text))
+                    else:
+                        lexer = get_lexer_for_mimetype(ct_pygments)
+                        formatter = CustomHtmlFormatter(linenos='table', lineanchors="L",
+                                                        lineparagraphs="L", anchorlinenos=True)
+                        rendered_content = Markup(highlight(text, lexer, formatter))
                 else:
                     rendered_content = '此文件无法直接预览，请下载后打开。'
             else:

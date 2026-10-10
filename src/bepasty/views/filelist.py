@@ -7,10 +7,11 @@ from werkzeug.exceptions import Forbidden
 
 from ..constants import ID, TIMESTAMP_UPLOAD
 from ..utils.date_funcs import delete_if_lifetime_over
-from ..utils.permissions import LIST, may
+from ..utils.permissions import ADMIN, LIST, READ, may
+from ..utils.text_preview import is_txt, text_head
 
 
-def file_infos(names=None):
+def file_infos(names=None, preview=False):
     """
     Iterate over storage files' metadata.
 
@@ -31,6 +32,9 @@ def file_infos(names=None):
                     continue
                 if delete_if_lifetime_over(item, name):
                     continue
+                if (preview and meta.get("complete") and is_txt(meta) and may(READ)
+                        and (not meta.get("locked") or may(ADMIN))):
+                    meta["text_head"] = text_head(item)
                 meta[ID] = name
                 yield meta
         except OSError as e:
@@ -45,7 +49,7 @@ class FileListView(MethodView):
     def get(self):
         if not may(LIST):
             raise Forbidden()
-        files = sorted(file_infos(), key=lambda f: f[TIMESTAMP_UPLOAD], reverse=True)
+        files = sorted(file_infos(preview=True), key=lambda f: f[TIMESTAMP_UPLOAD], reverse=True)
         if request.args.get('fragment') == '1':
             response = make_response(render_template('_workspace_filelist.html', files=files))
             response.headers['Cache-Control'] = 'no-store'
