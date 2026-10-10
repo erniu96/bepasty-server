@@ -1,119 +1,106 @@
 {% extends "_layout.html" %}
-
-{%- import '_utils.html' as utils -%}
-
+{% import '_utils.html' as utils %}
 {% set page_title = item.meta['filename'] or name %}
+{% block body_class %}detail-page{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1>
-            {{ item.meta['filename'] }}
-        </h1>
-        <div class="btn-group flex-wrap flex-md-nowrap" role="group">
-            {% if not item.meta['locked'] or may(ADMIN) %}
-                {% if is_list_item %}
-                <a id="carousel-btn" href="{{ url_for('bepasty.carousel', name=name) }}" class="btn btn-info">
-                    <span class="fas fa-play-circle"></span> Carousel
-                </a>
-                {% endif %}
-                <a id="qr-btn" href="{{ url_for('bepasty.qr', name=name) }}" class="btn btn-info">
-                    <span class="fas fa-qrcode"></span> QR
-                </a>
-                <a id="download-btn" href="{{ url_for('bepasty.download', name=name) }}" class="btn btn-info" role="button">
-                    <span class="fas fa-download"></span> Download
-                </a>
-                <a id="inline-btn" href="{{ url_for('bepasty.inline', name=name) }}" class="btn btn-info" role="button">
-                    <span class="fas fa-asterisk"></span> Inline
-                </a>
-            {% endif %}
-            {% if may(MODIFY) %}
-                <div id="hidden-modify-frm" class="d-none" modalTitle="Modify Metadata" modalFocus="filename">
-                    <!-- Modify form used by utils.js -->
-                    <form id="modify-frm" action="{{ url_for('bepasty.modify', name=name) }}" method="post">
-                        <div class="form-group row">
-                            <label for="filename" class="col-2 form-label">Filename</label>
-                            <div class="col-10">
-                                {{ utils.input_filename(item.meta['filename']) }}
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="contenttype" class="col-2 form-label">Type</label>
-                            <div class="col-10">
-                                {{ utils.input_contenttype(item.meta['type']) }}
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary d-none">Submit</button>
-                    </form>
-                </div>
-                <button id="modify-btn" type="button" class="btn btn-info">
-                    <span class="fas fa-edit"></span> Modify
-                </button>
-            {% endif %}
-            {% if may(DELETE) %}
-                <form id="del-frm" action="{{ url_for('bepasty.delete', name=name) }}" method="post" class="btn-group">
-                    <input type="hidden" name="next" value="{{ url_for('bepasty.index') }}">
-                    <button id="del-btn" type="button" class="btn btn-danger">
-                        <span class="fas fa-times"></span> Delete
-                    </button>
-                </form>
-            {% endif %}
-            {% if may(ADMIN) %}
-            {% if not item.meta['locked'] %}
-                <form id="lock-frm" action="{{ url_for('bepasty.lock', name=name) }}" method="post" class="btn-group">
-                    <button id="lock-btn" type="submit" class="btn btn-danger">
-                        <span class="fas fa-lock"></span> Lock
-                    </button>
-                </form>
-            {% else %}
-                <form id="unlock-frm" action="{{ url_for('bepasty.unlock', name=name) }}" method="post" class="btn-group">
-                    <button id="unlock-btn" type="submit" class="btn btn-info">
-                        <span class="fas fa-unlock"></span> Unlock
-                    </button>
-                </form>
-            {% endif %}
-            {% endif %}
-        </div>
-    </div>
-    <div class="card-body">
-        <p>
-        Type: {{ item.meta['type'] }},
-        Size: {{ item.meta['size'] }} bytes,
-        SHA256: <code>{{ item.meta['hash'] }}</code>.
-        <br/>
-        UTC timestamps:
-        upload: {{ item.meta['timestamp-upload'] | datetime }},
-        download: {{ item.meta['timestamp-download'] | datetime }},
-        {% if item.meta['timestamp-max-life'] > 0 %}
-        max lifetime: {{ item.meta['timestamp-max-life'] | datetime }}.
-        {% else %}
-        max lifetime: forever.
-        {% endif %}
+<div id="detail-workspace">
+<section class="file-overview page-panel">
+    <header class="page-heading">
+        <h1 class="file-title" title="{{ item.meta['filename'] or name }}">{{ item.meta['filename'] or name }}</h1>
+        <p class="file-row-meta">
+            <span>{{ utils.filesize(item.meta['size']) }}</span>
+            <span>到期：<span class="current-expiry">{{ utils.expiry(item.meta['timestamp-max-life']) }}</span></span>
         </p>
-        <div class="data">
-            {{ rendered_content }}
-        </div>
+    </header>
+    {% if item.meta['complete'] %}
+    <div class="page-actions file-actions">
+        <a id="download-btn" href="{{ url_for('bepasty.download', name=name) }}" class="btn btn-primary">下载文件</a>
+        {{ utils.copy_button(url_for('bepasty.download', name=name), item.meta['type'], item.meta['size']) }}
+        <a id="inline-btn" href="{{ url_for('bepasty.inline', name=name) }}" class="btn btn-outline-secondary">打开原文件</a>
+        <a id="qr-btn" href="{{ url_for('bepasty.qr', name=name) }}" class="btn btn-outline-secondary">二维码</a>
+        {% if is_list_item %}
+        <a id="carousel-btn" href="{{ url_for('bepasty.carousel', name=name) }}" class="btn btn-outline-secondary">浏览图片</a>
+        {% endif %}
     </div>
+    {{ utils.share_link(url_for('bepasty.display', name=name, _external=True)) }}
+    {% else %}
+    <p class="file-state">上传未完成</p>
+    <p>完成上传后才能下载和分享。</p>
+    <a href="{{ url_for('bepasty.index') }}" class="btn btn-outline-secondary">返回上传</a>
+    {% endif %}
+</section>
+
+<div class="detail-content">
+<nav class="detail-tabs" aria-label="文件内容与操作" style="display: none">
+    {% if item.meta['complete'] %}<button type="button" class="btn btn-primary" data-detail-view="preview" aria-pressed="true">预览</button>{% endif %}
+    <button type="button" class="btn btn-outline-secondary" data-detail-view="info">文件信息</button>
+    {% if (item.meta['complete'] and may(MODIFY)) or may(DELETE) %}<button type="button" class="btn btn-outline-secondary" data-detail-view="manage">管理文件</button>{% endif %}
+</nav>
+{% if item.meta['complete'] %}
+<section class="page-panel detail-view detail-qr" data-detail-panel="qr" aria-label="二维码分享" style="display: none">
+    <h2>扫码打开文件</h2>
+    <div id="detail-qr-code" role="img" aria-label="文件链接二维码"></div>
+    <p id="detail-qr-status" role="status">用另一台设备扫描，直接打开这个文件。</p>
+    <button id="detail-qr-close" type="button" class="btn btn-outline-secondary">返回内容</button>
+</section>
+{% endif %}
+{% if item.meta['complete'] %}
+<section class="file-preview page-panel detail-view" data-detail-panel="preview" aria-label="文件预览" tabindex="0">
+    <div class="data">{{ rendered_content }}</div>
+</section>
+{% endif %}
+
+<section class="file-details page-panel detail-view" data-detail-panel="info" tabindex="0">
+    <h2>文件信息</h2>
+    <dl class="file-metadata">
+        <dt>文件类型</dt><dd>{{ item.meta['type'] }}</dd>
+        <dt>文件大小</dt><dd>{{ item.meta['size'] }} 字节</dd>
+        <dt>SHA256</dt><dd><code>{{ item.meta['hash'] or '正在计算…' }}</code></dd>
+        <dt>上传时间</dt><dd>{{ item.meta['timestamp-upload'] | datetime }} UTC</dd>
+        <dt>最近访问</dt><dd>{% if item.meta['timestamp-download'] %}{{ item.meta['timestamp-download'] | datetime }} UTC{% else %}尚未访问{% endif %}</dd>
+    </dl>
+</section>
+
+{% if (item.meta['complete'] and may(MODIFY)) or may(DELETE) %}
+<section id="file-management" class="file-management page-panel detail-view" data-detail-panel="manage" tabindex="0">
+    <h2>管理文件</h2>
+    <div class="management-content">
+        {% if item.meta['complete'] and may(MODIFY) %}
+        <h2 class="h5">修改文件信息</h2>
+        {{ utils.modify_form(name, item.meta['filename'], item.meta['type'], item.meta['timestamp-max-life']) }}
+        <p id="detail-save-status" role="status" aria-live="polite"></p>
+        {% endif %}
+        {% if may(DELETE) %}
+        <div class="delete-section">
+            <h2 class="h5">删除文件</h2>
+            <p>删除后，原分享链接将失效。</p>
+            <form id="del-frm" action="{{ url_for('bepasty.delete', name=name) }}" method="post">
+                <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
+                <button id="del-btn" type="submit" class="btn btn-outline-danger">{% if item.meta['complete'] %}删除这个文件{% else %}取消并删除{% endif %}</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+</div>
 </div>
 {% endblock content %}
 
 {% block extra_link %}
-<!-- Pygments styles -->
 <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='pygments', filename='css/colorful.css') }}" type="text/css">
-<!-- asciinema styles -->
+{% if item.meta['type'] == 'application/x-asciinema-recording' %}
 <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='asciinema_player', filename='asciinema-player.css') }}" type="text/css">
+{% endif %}
 {% endblock %}
 
 {% block extra_script %}
-<script src="{{ url_for('bepasty.xstatic', name='bootbox', filename='bootbox.min.js') }}" type="text/javascript"></script>
+{% if item.meta['type'] == 'application/x-asciinema-recording' %}
 <script src="{{ url_for('bepasty.xstatic', name='asciinema_player', filename='asciinema-player.js') }}" type="text/javascript"></script>
-<script src="{{ url_for('static', filename='app/js/utils.js') }}" type="text/javascript"></script>
-{% if may(MODIFY) %}
-<script>
-    <!-- Function used by utils.js -->
-    function contenttype_autocomplete(modal_box) {
-        {{ utils.contenttype_autocomplete('$(modal_box).find("#contenttype")', contenttypes) }}
-    };
-</script>
 {% endif %}
+<script src="{{ url_for('static', filename='app/js/utils.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='app/js/share.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='app/js/qrcode.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='app/js/detail.js') }}" type="text/javascript"></script>
 {% endblock extra_script %}

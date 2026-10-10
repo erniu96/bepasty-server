@@ -37,6 +37,8 @@ Other changes:
 - add an HTTP transfer benchmark with downloaded SHA-256 verification and cleanup.
 - default to passwordless access for the trusted local network, without login
   forms or permission icons; retain optional token authentication for API clients.
+- rebuild every page around Upload and List, with large touch controls, Chinese
+  labels, mobile file cards, native metadata forms and responsive QR/image views.
 - show separate file and text forms, retention presets, file information and
   management controls directly; copy links and download directly from the list.
 - support iOS safe areas without limiting browser zoom.

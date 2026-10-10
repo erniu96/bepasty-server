@@ -96,7 +96,7 @@ class DisplayView(MethodView):
                         elif view == 'carousel':
                             # This template renders a complete HTML page
                             # We only consider image items for this
-                            files = [f for f in files if f[TYPE].startswith('image/')]
+                            files = [f for f in files if f[COMPLETE] and f[TYPE].startswith('image/')]
                             return render_template('carousel.html', files=files)
                         else:
                             raise NotImplementedError
@@ -105,22 +105,25 @@ class DisplayView(MethodView):
                         delay = request.args.get('delay', '3')
                         return render_template('redirect.html', url=url, delay=delay)
                     else:
-                        rendered_content = "Can't render this content type."
+                        rendered_content = '此文件无法直接预览，请下载后打开。'
                 elif ct.startswith('image/'):
                     src = url_for('bepasty.download', name=name)
-                    rendered_content = Markup('<img src="%s" alt="the image" width="800">' % src)
+                    rendered_content = Markup('<img src="{}" alt="{}">').format(src, item.meta[FILENAME])
                 elif ct.startswith('audio/'):
                     src = url_for('bepasty.download', name=name)
-                    alt_msg = 'HTML5 audio element not supported by your browser.'
-                    rendered_content = Markup(f'<audio controls src="{src}">{alt_msg}</audio>')
+                    alt_msg = '浏览器不支持音频播放，请下载后打开。'
+                    rendered_content = Markup(
+                        '<audio controls preload="metadata" src="{}">{}</audio>').format(src, alt_msg)
                 elif ct.startswith('video/'):
                     src = url_for('bepasty.download', name=name)
-                    alt_msg = 'HTML5 video element not supported by your browser.'
-                    rendered_content = Markup(f'<video controls src="{src}">{alt_msg}</video>')
+                    alt_msg = '浏览器不支持视频播放，请下载后打开。'
+                    rendered_content = Markup(
+                        '<video controls playsinline preload="metadata" src="{}">{}</video>').format(src, alt_msg)
                 elif ct in ['application/pdf', 'application/x-pdf', ]:
                     src = url_for('bepasty.inline', name=name)
-                    link_txt = 'Click to see PDF'
-                    rendered_content = Markup(f'<a href="{src}">{link_txt}</a>')
+                    rendered_content = Markup(render_template(
+                        '_document_preview.html', inline_url=src,
+                        download_url=url_for('bepasty.download', name=name)))
                 elif ct == 'application/x-asciinema-recording':
                     src = url_for('bepasty.download', name=name)
                     rendered_content = Markup('<asciinema-player src="{}" title="{}" theme="{}" autoplay>').format(
@@ -138,12 +141,12 @@ class DisplayView(MethodView):
                                                     lineparagraphs="L", anchorlinenos=True)
                     rendered_content = Markup(highlight(text, lexer, formatter))
                 else:
-                    rendered_content = "Can't render this content type."
+                    rendered_content = '此文件无法直接预览，请下载后打开。'
             else:
                 if not complete:
-                    rendered_content = "Rendering not allowed (not complete). Is it still being uploaded?"
+                    rendered_content = '文件还在上传，完成后即可打开。'
                 else:
-                    rendered_content = "Rendering not allowed (too big?). Try downloading."
+                    rendered_content = '文件较大，请下载后打开。'
 
             return render_template('display.html', name=name, item=item,
                                    rendered_content=rendered_content,

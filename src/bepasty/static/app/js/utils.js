@@ -1,44 +1,4 @@
 $(function () {
-    // Show a confirm dialog box when trying to delete a file
-    $("#del-btn").click(function(){
-        bootbox.confirm("Are you sure you want to delete this file?", function(result) {
-            if (result == true){
-                $("#del-frm").submit();
-            }
-        });
-    });
-
-    // Show a modify dialog box when trying to edit metadata.
-    $("#modify-btn").click(function() {
-        var form_name = "modify-frm"
-        var hidden_name_id = "#hidden-" + form_name
-        // Read form template from HTML
-        var modal_form = $(hidden_name_id).html();
-        var modal_title = $(hidden_name_id).attr('modalTitle');
-        var modal_focus = $(hidden_name_id).attr('modalFocus');
-        // A bit of a hack to avoid implementing this from scratch
-        // using .dialog().
-        var box = bootbox.confirm({
-            title: modal_title,
-            message: modal_form,
-            centerVertical: true,
-            onShown: function(e) {
-                if (modal_focus) {
-                    $(this).find("#" + modal_focus).trigger('focus');
-                }
-                // Support jQuery UI autocomplete
-                contenttype_autocomplete(this)
-            },
-            callback: function(result) {
-                // Please note that this is not called when hitting
-                // the Enter key on the input box.
-                if (result == true) {
-                    $(this).find("#" + form_name).submit();
-                }
-            }
-        });
-    });
-
     // Bind click event to all line number anchor tags
     $('td.linenos a').on('click', function(e) {
         remove_highlights();

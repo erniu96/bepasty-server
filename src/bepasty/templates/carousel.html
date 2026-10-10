@@ -1,45 +1,41 @@
-{% extends "_layout.html" %}
+{% extends '_layout.html' %}
+{% set page_title = '浏览图片' %}
 
-{% block extra_link %}
-<style>
-/* Carousel sizing and background behavior */
-.carousel .carousel-item {
-  height: 40em;
-}
-.carousel .carousel-item > *:first-child {
-  background-position: 50%;
-  background-repeat: no-repeat;
-  background-size: cover;
-  height: inherit;
-  background-color: black;
-}
-</style>
-{% endblock %}
+{% block body_class %}gallery-page{% endblock %}
 
 {% block content %}
-    <div class="carousel slide" id="demo-carousel" data-ride="carousel">
-        <ol class="carousel-indicators">
-            {% for file in files %}
-                <li class="{% if loop.index == 1 %}active{% endif %}" data-target="#demo-carousel" data-slide-to="{{ loop.index }}"></li>
-            {% endfor %}
-        </ol>
-        <div class="carousel-inner rounded">
-            {% for file in files %}
-                <div class="carousel-item{% if loop.index == 1 %} active{% endif %}">
-                    <div style="background-image: url('{{ url_for('bepasty.inline', name=file['id']) }}')"></div>
-                    <div class="carousel-caption">
-                        <h3>{{ file['filename'] }}</h3>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-        <a class="carousel-control-prev" href="#demo-carousel" role="button" data-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="sr-only">Previous</span>
-        </a>
-        <a class="carousel-control-next" href="#demo-carousel" role="button" data-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="sr-only">Next</span>
-        </a>
+<section class="page-panel gallery-summary">
+    <header class="page-heading">
+        <h1>浏览图片</h1>
+        <p>共 {{ files | length }} 张图片。</p>
+    </header>
+    <div class="page-actions">
+        <a href="{{ url_for('bepasty.display', name=request.view_args['name']) }}" class="btn btn-primary">返回文件集合</a>
+        <a href="{{ url_for('bepasty.filelist') }}" class="btn btn-outline-secondary">文件列表</a>
     </div>
-{% endblock content %}
+</section>
+<div class="image-gallery">
+    {% for file in files %}
+    <figure id="image-{{ loop.index }}" class="gallery-item page-panel">
+        <figcaption>
+            <h2 class="file-title h5">{{ loop.index }} / {{ loop.length }} · {{ file['filename'] or file['id'] }}</h2>
+        </figcaption>
+        <img src="{{ url_for('bepasty.inline', name=file['id']) }}" alt="{{ file['filename'] }}" loading="lazy">
+        <div class="page-actions gallery-actions">
+            {% if not loop.first %}<a href="#image-{{ loop.index - 1 }}" class="btn btn-outline-secondary">上一张</a>{% else %}<span class="btn btn-outline-secondary disabled" aria-disabled="true">上一张</span>{% endif %}
+            {% if not loop.last %}<a href="#image-{{ loop.index + 1 }}" class="btn btn-outline-secondary">下一张</a>{% else %}<span class="btn btn-outline-secondary disabled" aria-disabled="true">下一张</span>{% endif %}
+            <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-primary">下载图片</a>
+        </div>
+    </figure>
+    {% else %}
+    <div class="empty-state page-panel">
+        <h2 class="h5">这个集合里没有图片</h2>
+        <p>返回文件集合，可以打开或下载其它文件。</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script src="{{ url_for('static', filename='app/js/gallery.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends '_layout.html' %}
+{% import '_utils.html' as utils %}
+{% set page_title = '修改文件' %}
+
+{% block content %}
+<section class="page-panel">
+    <header class="page-heading">
+        <h1>修改文件</h1>
+        <p class="file-title">{{ item.meta['filename'] or name }}</p>
+    </header>
+    {{ utils.modify_form(name, item.meta['filename'], item.meta['type'], item.meta['timestamp-max-life']) }}
+    <div class="page-actions">
+        <a href="{{ url_for('bepasty.display', name=name) }}" class="btn btn-outline-secondary">返回文件</a>
+    </div>
+</section>
+{% endblock %}

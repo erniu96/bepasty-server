@@ -18,6 +18,7 @@ Contents
    quickstart
    install-tutorial
    performance
+   mobile
    changelog
    project
    license

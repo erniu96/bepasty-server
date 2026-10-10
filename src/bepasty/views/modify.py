@@ -34,6 +34,23 @@ class ModifyView(MethodView):
             TYPE: request.form.get('contenttype'),
         }
 
+    def get(self, name):
+        if not may(MODIFY):
+            raise Forbidden()
+        try:
+            with current_app.storage.open(name) as item:
+                if not item.meta[COMPLETE] and not may(ADMIN):
+                    return self.error(item, '文件还在上传，请稍后再试。')
+                if item.meta[LOCKED] and not may(ADMIN):
+                    raise Forbidden()
+                if delete_if_lifetime_over(item, name):
+                    raise NotFound()
+                return render_template('modify.html', name=name, item=item)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                raise NotFound()
+            raise
+
     def post(self, name):
         if not may(MODIFY):
             raise Forbidden()

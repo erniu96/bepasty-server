@@ -1,112 +1,95 @@
-{% extends "_layout.html" %}
-
-{% block extra_link %}
-    <script src="{{ url_for('static', filename='app/js/qrcode.js') }}" type="text/javascript"></script>
-
-    <script>
-
-        // Code based on BorgBackup's paperkey.html (written by https://github.com/textshell, BSD licensed),
-        // modified and simplified for use in Bepasty by Thomas Waldmann.
-
-        "use strict";
-
-        function create_qrcode(text, errorCorrectionLevel) {
-            for (var typeNumber = 1; typeNumber <= 40; typeNumber++) {
-                try {
-                    var qr = qrcode(typeNumber, errorCorrectionLevel);
-                    qr.addData(text);
-                    qr.make();
-                    return qr.createSvgTag();
-                } catch (e) {
-                    if (!e.message || !e.message.startsWith("code length overflow")) {
-                        throw e;
-                    }
-                }
-            }
-            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 194 194" width="194px" height="194px">' +
-                '<path d="m 186,8 0,14 -14,0 0,-14 m 12,12 0,-10 -10,0 0,10 m -162,-8 0,6 6,0 0,-6 m 164,6 -6,0 0,-6 6,0 z M 10,10 20,10 20,20 10,20 M 8,8 8,22 22,22 22,8 m 150,166 0,-2 2,0 0,2 z m 6,-6 -10,0 0,10 10,0 m -8,-8 6,0 0,6 -6,0 z m -158,12 0,-6 6,0 0,6 m 2,-8 0,10 -10,0 0,-10 m 0,0 10,0 m 2,-2 -14,0 0,14 14,0" style="fill: #ddd;"/>' +
-                '<text style="font-size:10px;fill:#ddd;stroke:none;stroke-width:1px;" x="30" y="90">Data too long for this</text>' +
-                '<text style="font-size:10px;fill:#ddd;stroke:none;stroke-width:1px;" x="30" y="110">error correction level.</text>' +
-                '</svg>'
-        }
-
-        function update() {
-            var text = document.getElementById('text').value;
-            var ecl = document.getElementById('errorCorrectionLevel').value;
-            var target = document.getElementById('qr');
-            target.innerHTML = create_qrcode(text, ecl);
-            var svg = target.children[0];
-            svg.setAttribute("viewBox", "0 0 " +
-                svg.getAttribute("width").replace("px", "") +
-                " " +
-                svg.getAttribute("height").replace("px", ""));
-
-            var size = document.getElementById('qrsize').value;
-            svg.setAttribute("width", size + "mm");
-            svg.setAttribute("height", size + "mm");
-        }
-
-        function call_soon(func, wait) {
-            var timeout;
-            return function () {
-                clearTimeout(timeout);
-                timeout = setTimeout(function () {
-                    timeout = null;
-                    func();
-                }, wait);
-            };
-        }
-
-        function loaded() {
-            document.getElementById('text').addEventListener('input', call_soon(update), false);
-            document.getElementById('qrsize').addEventListener('change', update, false);
-            document.getElementById('qrsize').addEventListener('input', call_soon(update), false);
-            document.getElementById('errorCorrectionLevel').addEventListener('change', update, false);
-            update();
-        }
-
-        window.addEventListener("load", loaded, false);
-    </script>
-{% endblock %}
-
+{% extends '_layout.html' %}
+{% import '_utils.html' as utils %}
+{% set page_title = '二维码分享' %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <form>
-                <div class="form-group row">
-                    <label class="col-md-3 col-form-label text-md-right text-nowrap" for="text">Content:</label>
-                    <div class="col-md-9">
-                        <input class="form-control" id="text" placeholder="https://example.org/" size="80"
-                               value="{{ text }}">
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-md-3 col-form-label text-md-right text-nowrap" for="errorCorrectionLevel">Error correction:</label>
-                    <div class="col-md-2">
-                        <select class="form-control" id="errorCorrectionLevel" name="e">
-                            <option value="L">7% (L)</option>
-                            <option value="M">15% (M)</option>
-                            <option value="Q">25% (Q)</option>
-                            <option value="H" selected="selected">30% (H)</option>
-                        </select>
-                    </div>
-                    <label class="col-md-1 col-form-label text-md-right text-nowrap" for="qrsize">Size:</label>
-                    <div class="col-md-6">
-                        <input type="range" class="form-control" id="qrsize" min="45" max="500" value="100">
-                    </div>
-                </div>
-            </form>
-
-            <div class="text-right">
-                <button type="button" class="btn btn-primary" onclick="update()">Update</button>
-            </div>
-        </div>
-
-        <div class="card-body">
-            <div class="text-center">
-                <div id="qr"></div>
-            </div>
-        </div>
+<section class="qr-panel page-panel">
+    <header class="page-heading">
+        <h1>二维码分享</h1>
+        <p>用另一台设备扫描，直接打开这个文件。</p>
+    </header>
+    <div id="qr" class="qr-code" role="img" aria-label="文件链接二维码"></div>
+    <p id="qr-status" class="text-muted" role="status"></p>
+    <noscript><p>二维码需要 JavaScript。你仍可以复制下方链接来分享。</p></noscript>
+    {{ utils.share_link(text) }}
+    <div class="page-actions">
+        <a href="{{ text }}" class="btn btn-primary">返回文件</a>
+        <a href="{{ url_for('bepasty.filelist') }}" class="btn btn-outline-secondary">文件列表</a>
     </div>
+    <details class="qr-settings">
+        <summary>二维码设置</summary>
+        <div id="qr-controls" class="management-content" style="display: none">
+            <div class="form-group">
+                <label for="text">二维码内容</label>
+                <input id="text" class="form-control" type="text" value="{{ text }}" autocapitalize="none" spellcheck="false">
+            </div>
+            <div class="form-group">
+                <label for="qrsize">显示大小</label>
+                <input id="qrsize" type="range" class="form-control" min="180" max="480" value="280">
+            </div>
+            <div class="form-group">
+                <label for="errorCorrectionLevel">容错级别</label>
+                <select id="errorCorrectionLevel" class="form-control">
+                    <option value="L">较低（7%）</option>
+                    <option value="M">普通（15%）</option>
+                    <option value="Q">较高（25%）</option>
+                    <option value="H" selected>最高（30%）</option>
+                </select>
+            </div>
+            <button id="qr-update" type="button" class="btn btn-outline-secondary">更新二维码</button>
+        </div>
+    </details>
+</section>
+{% endblock %}
+
+{% block extra_script %}
+<script src="{{ url_for('static', filename='app/js/qrcode.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='app/js/share.js') }}" type="text/javascript"></script>
+<script>
+(function () {
+    'use strict';
+    function create_qrcode(text, level) {
+        for (var typeNumber = 1; typeNumber <= 40; typeNumber++) {
+            try {
+                var qr = qrcode(typeNumber, level);
+                qr.addData(text);
+                qr.make();
+                return qr.createSvgTag();
+            } catch (error) {
+                if (!error.message || error.message.indexOf('code length overflow') !== 0) {
+                    throw error;
+                }
+            }
+        }
+        throw new Error('内容过长，无法生成二维码。');
+    }
+    function update() {
+        var target = document.getElementById('qr');
+        var status = document.getElementById('qr-status');
+        try {
+            target.innerHTML = create_qrcode(document.getElementById('text').value,
+                document.getElementById('errorCorrectionLevel').value);
+            var svg = target.getElementsByTagName('svg')[0];
+            var size = document.getElementById('qrsize').value;
+            svg.setAttribute('viewBox', '0 0 ' + parseInt(svg.getAttribute('width'), 10) +
+                ' ' + parseInt(svg.getAttribute('height'), 10));
+            svg.setAttribute('role', 'presentation');
+            svg.setAttribute('width', size);
+            svg.setAttribute('height', size);
+            status.textContent = '';
+        } catch (error) {
+            target.innerHTML = '';
+            status.textContent = '无法生成二维码，请复制分享链接。';
+        }
+    }
+    function loaded() {
+        document.getElementById('qr-controls').style.display = 'block';
+        document.getElementById('qr-update').addEventListener('click', update, false);
+        document.getElementById('qrsize').addEventListener('input', update, false);
+        document.getElementById('errorCorrectionLevel').addEventListener('change', update, false);
+        update();
+    }
+    window.addEventListener('load', loaded, false);
+}());
+</script>
 {% endblock %}
