@@ -7,6 +7,7 @@ Unreleased
 Fixes:
 
 - stop downloads with an error if the stored file ends unexpectedly.
+- preserve printable Unicode filenames and provide compatible download headers.
 - reject negative or oversized metadata before creating storage, and check
   native uploads against configured size limits before copying their contents.
 

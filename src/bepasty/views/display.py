@@ -123,9 +123,8 @@ class DisplayView(MethodView):
                     rendered_content = Markup(f'<a href="{src}">{link_txt}</a>')
                 elif ct == 'application/x-asciinema-recording':
                     src = url_for('bepasty.download', name=name)
-                    rendered_content = Markup('<asciinema-player src="%s" title="%s" theme="%s" autoplay>' %
-                                              (src, item.meta[FILENAME],
-                                               current_app.config.get('ASCIINEMA_THEME', 'asciinema')))
+                    rendered_content = Markup('<asciinema-player src="{}" title="{}" theme="{}" autoplay>').format(
+                        src, item.meta[FILENAME], current_app.config.get('ASCIINEMA_THEME', 'asciinema'))
                 elif use_pygments:
                     text = read_data(item)
                     # TODO: We don't have the encoding in metadata

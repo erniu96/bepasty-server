@@ -1,8 +1,46 @@
 import collections
-from urllib.parse import urlparse, urljoin
+import os
+import re
+import unicodedata
+from urllib.parse import quote, urlparse, urljoin
 
 from flask import request, redirect, url_for
 from werkzeug.exceptions import BadRequest
+
+
+_filename_ascii_re = re.compile(r'[a-zA-Z0-9 *+:;.,_-]')
+
+
+def sanitize_filename(filename):
+    """Keep the existing ASCII filename characters and printable Unicode.
+
+    Filenames are labels, never storage paths. Exclude control/format characters,
+    Unicode separators and surrogates as well as ASCII path and HTML delimiters.
+    """
+    return ''.join(char for char in filename
+                   if _filename_ascii_re.fullmatch(char) or
+                   (ord(char) > 127 and unicodedata.category(char)[0] not in ('C', 'Z') and
+                    unicodedata.normalize('NFKC', char) not in ('/', '\\')))
+
+
+def content_disposition(disposition, filename, fallback_name='download'):
+    """Build an ASCII header with a UTF-8 filename for modern clients.
+
+    RFC 6266 recommends putting the ASCII filename first so legacy clients can
+    still save the file. Do not pass raw Unicode through WSGI response headers.
+    """
+    filename = sanitize_filename(filename) or fallback_name
+    value = '{}; filename="{}"'
+    if filename.isascii():
+        return value.format(disposition, filename)
+
+    stem, extension = os.path.splitext(filename)
+    stem = sanitize_filename(unicodedata.normalize('NFKD', stem).encode('ascii', 'ignore').decode())
+    extension = sanitize_filename(unicodedata.normalize('NFKD', extension).encode('ascii', 'ignore').decode())
+    ascii_filename = (stem if stem.strip(' .') else fallback_name) + extension
+    # RFC 5987 attr-char, also used by Werkzeug's send_file implementation.
+    encoded = quote(filename, safe='!#$&+-.^_`|~')
+    return value.format(disposition, ascii_filename) + "; filename*=UTF-8''" + encoded
 
 
 # Safely and comfortably redirect

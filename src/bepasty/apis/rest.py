@@ -9,7 +9,7 @@ from werkzeug.exceptions import HTTPException, BadRequest, Conflict, Forbidden, 
 
 from ..constants import FILENAME, ID, SIZE, TYPE, TRANSACTION_ID
 from ..utils.date_funcs import get_maxlife
-from ..utils.http import ContentRange, DownloadRange
+from ..utils.http import ContentRange, DownloadRange, content_disposition
 from ..utils.name import ItemName
 from ..utils.permissions import CREATE, LIST, may
 from ..utils.upload import Upload, filter_internal, background_compute_hash
@@ -235,8 +235,8 @@ class ItemDownloadView(ItemDetailView):
             range_begin = request_range.begin
 
         ret = Response(stream_with_context(self.stream(item, range_begin, range_end + 1)))
-        ret.headers['Content-Disposition'] = '{}; filename="{}"'.format(
-            self.content_disposition, item.meta[FILENAME])
+        ret.headers['Content-Disposition'] = content_disposition(
+            self.content_disposition, item.meta[FILENAME], name)
         ret.headers['Content-Length'] = (range_end - range_begin) + 1
         ret.headers['Content-Type'] = item.meta[TYPE]  # 'application/octet-stream'
         ret.status = '200'

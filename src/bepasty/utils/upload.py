@@ -32,6 +32,7 @@ from ..constants import (
 from .name import ItemName
 from .decorators import threaded
 from .hashing import compute_hash, hash_new
+from .http import sanitize_filename
 
 # We limit to 250 characters as we do not want to accept arbitrarily long
 # filenames. Other than that, there is no specific reason we could not
@@ -40,7 +41,6 @@ MAX_FILENAME_LENGTH = 250
 
 
 class Upload:
-    _filename_re = re.compile(r'[^a-zA-Z0-9 *+:;.,_-]+')
     _type_re = re.compile(r'[^a-zA-Z0-9/+.-]+')
 
     @classmethod
@@ -64,7 +64,7 @@ class Upload:
     def filter_filename(cls, filename, storage_name, content_type, content_type_hint):
         """
         Filter filename.
-        Only allow some basic characters and shorten to 250 characters.
+        Keep safe Unicode and existing ASCII characters, limited to 250 characters.
         """
         # Make up filename if we don't have one
         if not filename:
@@ -76,7 +76,7 @@ class Upload:
             else:
                 ext = ".bin"
             filename = storage_name + ext
-        return cls._filename_re.sub('', filename)[:MAX_FILENAME_LENGTH]
+        return sanitize_filename(filename)[:MAX_FILENAME_LENGTH]
 
     @classmethod
     def filter_type(cls, ct, ct_hint, filename=None):

@@ -17,6 +17,7 @@ from werkzeug.exceptions import NotFound, Forbidden
 
 from ..constants import COMPLETE, FILENAME, LOCKED, SIZE, TIMESTAMP_DOWNLOAD, TYPE
 from ..utils.date_funcs import delete_if_lifetime_over
+from ..utils.http import content_disposition
 from ..utils.permissions import ADMIN, READ, may
 
 
@@ -47,8 +48,7 @@ class DownloadView(MethodView):
                 ct = 'text/plain'  # Only send simple plain text
 
         ret = Response(stream_with_context(self.stream(item, 0, item.data.size)))
-        ret.headers['Content-Disposition'] = '{}; filename="{}"'.format(
-            dispo, item.meta[FILENAME])
+        ret.headers['Content-Disposition'] = content_disposition(dispo, item.meta[FILENAME], name)
         ret.headers['Content-Length'] = item.meta[SIZE]
         ret.headers['Content-Type'] = ct
         ret.headers['X-Content-Type-Options'] = 'nosniff'  # Yes, we really mean it
@@ -107,6 +107,9 @@ class ThumbnailView(InlineView):
         if unsupported:
             # Return a placeholder thumbnail for unsupported item types
             ret = Response(self.thumbnail_data)
+            thumbnail_fn = '{}-thumb.svg'.format(os.path.splitext(fn)[0])
+            ret.headers['Content-Disposition'] = content_disposition(
+                self.content_disposition, thumbnail_fn, name + '-thumb')
             ret.headers['Content-Length'] = len(self.thumbnail_data)
             ret.headers['Content-Type'] = 'image/svg+xml'
             ret.headers['X-Content-Type-Options'] = 'nosniff'  # Yes, we really mean it
@@ -128,12 +131,12 @@ class ThumbnailView(InlineView):
                 img.save(thumbnail_bio, thumbnail_type)
             thumbnail_data = thumbnail_bio.getvalue()
 
-        name, ext = os.path.splitext(fn)
-        thumbnail_fn = '{}-thumb.{}'.format(name, thumbnail_type)
+        stem, ext = os.path.splitext(fn)
+        thumbnail_fn = '{}-thumb.{}'.format(stem, thumbnail_type)
 
         ret = Response(thumbnail_data)
-        ret.headers['Content-Disposition'] = '{}; filename="{}"'.format(
-            self.content_disposition, thumbnail_fn)
+        ret.headers['Content-Disposition'] = content_disposition(
+            self.content_disposition, thumbnail_fn, name + '-thumb')
         ret.headers['Content-Length'] = len(thumbnail_data)
         ret.headers['Content-Type'] = 'image/%s' % thumbnail_type
         ret.headers['X-Content-Type-Options'] = 'nosniff'  # yes, we really mean it
