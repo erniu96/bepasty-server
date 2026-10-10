@@ -17,6 +17,10 @@ class Config:
     #: into SCRIPT_NAME (== APP_BASE_PATH) and the rest of PATH_INFO.
     APP_BASE_PATH = None  # '/bepasty'
 
+    #: Source IPs of gateways that terminate HTTPS and send X-Forwarded-Proto.
+    #: Empty by default. Only the scheme is forwarded; host and client IP stay intact.
+    TRUSTED_SCHEME_PROXY_IPS = ()
+
     #: Whether files are automatically locked after upload.
     #:
     #: If you want to require admin approval and manual unlocking for each

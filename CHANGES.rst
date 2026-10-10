@@ -25,6 +25,8 @@ Other changes:
 - remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
   advertise unlimited file size as JSON null while retaining numeric limits.
 - listen on all IPv4 interfaces by default and provide a bash command.txt launcher.
+- honour X-Forwarded-Proto only from TRUSTED_SCHEME_PROXY_IPS, so share
+  links use https behind a trusted TLS gateway.
 
 
 Release 1.2.2 (2025-05-06)

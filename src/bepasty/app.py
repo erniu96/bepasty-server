@@ -10,6 +10,7 @@ from flask import (
     session,
 )
 from markupsafe import Markup
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .apis import blueprint as blueprint_apis
 from .storage import create_storage
@@ -47,6 +48,20 @@ class PrefixMiddleware:
             return [b'This URL does not belong to the Bepasty app.']
 
 
+class TrustedSchemeMiddleware:
+    """Use one gateway's forwarded scheme only for configured source IPs."""
+    def __init__(self, app, trusted_ips):
+        self.app = app
+        self.trusted_ips = frozenset(trusted_ips)
+        self.proxy = ProxyFix(app, x_for=0, x_proto=1, x_host=0, x_port=0, x_prefix=0)
+
+    def __call__(self, environ, start_response):
+        if (environ.get('REMOTE_ADDR') in self.trusted_ips and
+                environ.get('HTTP_X_FORWARDED_PROTO') in ('http', 'https')):
+            return self.proxy(environ, start_response)
+        return self.app(environ, start_response)
+
+
 def setup_secret_key(app):
     """
     The secret key is used to sign cookies and cookies not signed with the
@@ -78,6 +93,8 @@ def create_app():
     prefix = app.config.get('APP_BASE_PATH')
     if prefix is not None:
         app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=prefix)
+    if app.config['TRUSTED_SCHEME_PROXY_IPS']:
+        app.wsgi_app = TrustedSchemeMiddleware(app.wsgi_app, app.config['TRUSTED_SCHEME_PROXY_IPS'])
 
     app.storage = create_storage(app)
     setup_werkzeug_routing(app)
