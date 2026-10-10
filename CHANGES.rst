@@ -8,6 +8,8 @@ Fixes:
 
 - stop downloads with an error if the stored file ends unexpectedly.
 - preserve printable Unicode filenames and provide compatible download headers.
+- retain manual link copying when Clipboard API calls fail synchronously or
+  return unsupported values, and explicitly select complete links on mobile.
 - reject uploads whose received file or chunk size differs from the declared
   size before writing or reporting successful completion.
 - reject gaps, repeated chunks and writes to completed browser uploads; serialize
@@ -19,9 +21,12 @@ Other changes:
 
 - use 256 KiB storage transfer blocks to reduce upload and download loop overhead.
 - document transfer limits and add a reproducible storage microbenchmark.
+- provide copyable share links with a manual-copy fallback, and improve
+  narrow-screen layouts and media previews.
 - add an HTTP transfer benchmark with downloaded SHA-256 verification and cleanup.
 - default to passwordless access for the trusted local network, without login
   forms or permission icons; retain optional token authentication for API clients.
+- support iOS safe areas without limiting browser zoom.
 - remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
   advertise unlimited file size as JSON null while retaining numeric limits.
 - listen on all IPv4 interfaces by default and provide a bash command.txt launcher.

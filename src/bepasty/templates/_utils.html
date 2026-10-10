@@ -1,103 +1,125 @@
-{% macro filelist(files) %}
-    <table class="table table-hover">
-        <thead>
-        <tr>
-            <th class="text-right">
-                Filename
-                <br />
-                Type
-                <br />
-                Size [B]
-            </th>
-            <th>
-                Thumbnail
-            </th>
-            <th>
-                Upload [UTC]
-                <br />
-                Download [UTC]
-            </th>
-            <th>
-                Actions
-            </th>
-        </tr>
-        </thead>
-        <tbody>
-            {% for file in files %}
-            <tr>
-                <td class="text-right">
-                    <a href="{{ url_for('bepasty.display', name=file['id']) }}">
-                        {{ file['filename'] }}
-                    </a>
-                    <br />
-                    {{ file['type'] }}
-                    <br />
-                    {{ file['size'] }}
-                </td>
-                <td>
-                    <a href="{{ url_for('bepasty.display', name=file['id']) }}">
-                        <img src="{{ url_for('bepasty.thumbnail', name=file['id']) }}">
-                    </a>
-                </td>
-                <td>
-                    {{ file['timestamp-upload'] | datetime }}
-                    <br />
-                    {% if file['timestamp-download'] %}
-                    {{ file['timestamp-download'] | datetime }}
-                    {% else %}
-                    never
-                    {% endif %}
-                </td>
-                <td>
-                    <div class="btn-group flex-wrap flex-md-nowrap" role="group">
-                        <a href="{{ url_for('bepasty.display', name=file['id']) }}" class="btn btn-sm btn-info" role="button">
-                            Display
-                        </a>
-                        <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-sm btn-info" role="button">
-                            Download
-                        </a>
-                        <a href="{{ url_for('bepasty.inline', name=file['id']) }}" class="btn btn-sm btn-info" role="button">
-                            Inline
-                        </a>
-                        {% if may(DELETE) %}
-                            <form action="{{ url_for('bepasty.delete', name=file['id']) }}" method="post" class="btn-group">
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    Delete
-                                </button>
-                            </form>
-                        {% endif %}
-                        {% if may(ADMIN) %}
-                        {% if not file['locked'] %}
-                            <form action="{{ url_for('bepasty.lock', name=file['id']) }}" method="post" class="btn-group">
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    Lock
-                                </button>
-                            </form>
-                        {% else %}
-                            <form action="{{ url_for('bepasty.unlock', name=file['id']) }}" method="post" class="btn-group">
-                                <button type="submit" class="btn btn-sm btn-info">
-                                    Unlock
-                                </button>
-                            </form>
-                        {% endif %}
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% macro filesize(size) -%}
+{% if size >= 1073741824 %}{{ '%.1f' | format(size / 1073741824) }} GiB
+{% elif size >= 1048576 %}{{ '%.1f' | format(size / 1048576) }} MiB
+{% elif size >= 1024 %}{{ '%.1f' | format(size / 1024) }} KiB
+{% else %}{{ size }} B{% endif %}
+{%- endmacro %}
+
+{% macro expiry(timestamp) -%}
+{% if timestamp > 0 %}{{ timestamp | datetime }} UTC{% else %}永久保留{% endif %}
+{%- endmacro %}
+
+{% macro filelist(files, workspace=False) %}
+<div class="file-list" role="list">
+    {% for file in files %}
+    {% set complete = file.get('complete', True) %}
+    <article class="file-row" role="listitem">
+        <div class="file-row-main">
+            {% if complete and file['type'].startswith('image/') %}
+            <a class="file-thumbnail" href="{{ url_for('bepasty.display', name=file['id']) }}" tabindex="-1" aria-hidden="true"{% if workspace %} target="_blank" rel="noopener"{% endif %}>
+                <img src="{{ url_for('bepasty.thumbnail', name=file['id']) }}" width="72" height="72" alt="" loading="lazy">
+            </a>
+            {% endif %}
+            <div class="file-row-info">
+                <h2 class="file-row-name h5">
+                    {% if complete %}<a href="{{ url_for('bepasty.display', name=file['id']) }}" title="{{ file['filename'] or file['id'] }}"{% if workspace %} target="_blank" rel="noopener"{% endif %}>{{ file['filename'] or file['id'] }}</a>
+                    {% else %}{{ file['filename'] or file['id'] }}{% endif %}
+                </h2>
+                <p class="file-row-meta">
+                    <span>{{ filesize(file['size']) }}</span>
+                    <span>到期：{{ expiry(file.get('timestamp-max-life', -1)) }}</span>
+                    {% if not complete %}<span class="file-state">上传未完成</span>{% endif %}
+                </p>
+                {% if file.get("text_head") is not none and "text_head" in file %}<pre class="text-head">{{ file["text_head"] }}</pre>{% endif %}
+            </div>
+        </div>
+        <div class="file-row-actions">
+            {% if complete %}
+            <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-primary">下载</a>
+            {{ copy_button(url_for('bepasty.download', name=file['id']), file['type'], file['size']) }}
+            {% else %}
+            <a href="{{ url_for('bepasty.index') }}" class="btn btn-outline-secondary">返回上传</a>
+            {% endif %}
+                {% if complete and may(MODIFY) %}
+                <a href="{{ url_for('bepasty.modify', name=file['id']) }}" class="btn btn-outline-secondary"{% if workspace %} target="_blank" rel="noopener"{% endif %}>修改名称</a>
+                {% endif %}
+                {% if may(DELETE) %}
+                <form action="{{ url_for('bepasty.delete', name=file['id']) }}" method="post"{% if workspace %} target="_blank"{% endif %}>
+                    <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
+                    <button type="submit" class="btn btn-outline-danger">{% if complete %}删除文件{% else %}取消并删除{% endif %}</button>
+                </form>
+                {% endif %}
+        </div>
+        {% if complete %}
+        {{ share_link(url_for('bepasty.display', name=file['id'], _external=not workspace)) }}
+        {% endif %}
+    </article>
+    {% else %}
+    <div class="empty-state">
+        <h2 class="h5">还没有文件</h2>
+        <p>上传文件或粘贴文字，就可以生成分享链接。</p>
+        <a href="{{ url_for('bepasty.index') }}" class="btn btn-primary">去上传</a>
+    </div>
+    {% endfor %}
+</div>
 {% endmacro %}
 
 {% macro input_filename(value) -%}
-    <input class="form-control" type="text" id="filename" name="filename" size="40" placeholder="optional download-filename"{% if value is defined %} value="{{ value }}"{% endif %}>
+<input class="form-control" type="text" id="filename" name="filename" size="40" placeholder="例如：笔记.txt"{% if value is defined %} value="{{ value }}"{% endif %}>
 {%- endmacro %}
 
 {% macro input_contenttype(value) -%}
-    <input class="form-control" type="text" id="contenttype" name="contenttype" size="30" placeholder="Content-Type"{% if value is defined %} value="{{ value }}"{% endif %}>
+<input class="form-control" type="text" id="contenttype" name="contenttype" size="30" placeholder="自动识别" autocapitalize="none" spellcheck="false"{% if value is defined %} value="{{ value }}"{% endif %}>
+{%- endmacro %}
+
+{% macro modify_form(name, filename, contenttype, timestamp=-1) -%}
+<form id="modify-frm" action="{{ url_for('bepasty.modify', name=name) }}" method="post" class="modify-form">
+    <input type="hidden" name="next" value="{{ url_for('bepasty.display', name=name) }}">
+    <div class="form-group">
+        <label for="filename">文件名</label>
+        {{ input_filename(filename) }}
+    </div>
+    <div class="form-group">
+        <label for="contenttype">文件类型</label>
+        {{ input_contenttype(contenttype) }}
+        <small class="form-text text-muted">通常无需修改；这会影响浏览器的预览方式。</small>
+    </div>
+    <div class="form-group">
+        <label for="maxlife-preset">有效期</label>
+        <select id="maxlife-preset" name="maxlife-preset" class="form-control">
+            <option value="keep">保持当前有效期</option>
+            <option value="HOURS:1">从现在起 1 小时</option>
+            <option value="DAYS:1">从现在起 1 天</option>
+            <option value="WEEKS:1">从现在起 1 周</option>
+            <option value="MONTHS:1">从现在起 1 个月</option>
+            <option value="YEARS:1">从现在起 1 年</option>
+            <option value="FOREVER:1">永久保留</option>
+        </select>
+        <small class="form-text text-muted">当前：<span class="current-expiry">{{ expiry(timestamp) }}</span></small>
+    </div>
+    <button type="submit" class="btn btn-primary">保存修改</button>
+</form>
+{%- endmacro %}
+
+{% macro share_link(url) -%}
+<div class="share-link">
+    <p class="share-link-label">分享链接</p>
+    <div class="share-link-controls">
+        <input class="form-control" type="text" value="{{ url }}" readonly aria-label="分享链接" autocapitalize="none" spellcheck="false">
+        <button class="btn btn-outline-secondary copy-link" type="button" style="display: none">复制链接</button>
+    </div>
+    <small class="share-status d-block" role="status" aria-live="polite"></small>
+</div>
 {%- endmacro %}
 
 {% macro contenttype_autocomplete(selector, contenttypes) -%}
     var availableTypes = ["{{ contenttypes | join('","') | safe}}"];
     {{ selector|safe }}.autocomplete({source: availableTypes});
+{%- endmacro %}
+
+{% macro copy_button(url, contenttype, size) -%}
+{% set ct = (contenttype or '').split(';')[0].strip() %}
+{% if size and size <= 20 * 1024 * 1024 and ((ct.startswith('text/') and not ct.startswith('text/x-bepasty-')) or ct.startswith('image/') or ct in ['application/json', 'application/xml', 'application/javascript', 'application/x-sh', 'application/x-yaml', 'application/yaml', 'application/toml', 'application/sql']) %}
+<button type="button" class="btn btn-outline-secondary copy-content" data-copy-src="{{ url }}" data-copy-kind="{{ 'image' if ct.startswith('image/') else 'text' }}">复制内容</button>
+{%- endif %}
 {%- endmacro %}

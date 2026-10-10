@@ -1,16 +1,31 @@
-{% extends "_layout.html" %}
+{% extends '_layout.html' %}
+{% set page_title = '无法打开' %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1>
-            {{ heading }}
-        </h1>
+<section class="page-panel error-panel">
+    <header class="page-heading">
+        {% if heading == 'Not Found' %}
+        <h1>文件不存在或已过期</h1>
+        {% elif heading == 'Forbidden' %}
+        <h1>暂时无法打开</h1>
+        {% else %}
+        <h1>{{ heading }}</h1>
+        {% endif %}
+    </header>
+    <div class="error-message" role="status">
+        {% if heading == 'Not Found' %}
+        <p>文件可能已删除或到期，也可能是链接不正确。</p>
+        {% elif heading == 'Forbidden' %}
+        <p>这个文件暂不可用。你可以返回列表选择其它文件。</p>
+        {% elif body == 'Upload incomplete. Try again later.' %}
+        <p>文件还在上传，请稍后再试。</p>
+        {% else %}
+        {{ body }}
+        {% endif %}
     </div>
-    <div class="card-body">
-        <div class="alert alert-danger">
-            {{ body }}
-        </div>
+    <div class="page-actions">
+        <a href="{{ url_for('bepasty.filelist') }}" class="btn btn-primary">返回文件列表</a>
+        <a href="{{ url_for('bepasty.index') }}" class="btn btn-outline-secondary">去上传</a>
     </div>
-</div>
-{% endblock content %}
+</section>
+{% endblock %}

@@ -104,29 +104,26 @@ def create_app():
 
     @app.errorhandler(403)
     def url_forbidden(e):
-        heading = 'Forbidden'
+        heading = '无法访问'
         body = Markup("""\
             <p>
-                You are not allowed to access the requested URL.
+                服务器当前不允许此操作。
             </p>
             <p>
-                If you entered the URL manually please check your spelling and try again.
-            </p>
-            <p>
-                Also check if you maybe forgot to log in or if your permissions are insufficient for this.
+                你可以返回上传页面，或查看文件列表。
             </p>
 """)
         return render_template('error.html', heading=heading, body=body), 403
 
     @app.errorhandler(404)
     def url_not_found(e):
-        heading = 'Not Found'
+        heading = '文件或页面不存在'
         body = Markup("""\
             <p>
-                The requested URL was not found on the server.
+                链接可能有误，或文件已经到期、被删除。
             </p>
             <p>
-                If you entered the URL manually please check your spelling and try again.
+                你可以检查链接，或回到列表查找文件。
             </p>
 """)
         return render_template('error.html', heading=heading, body=body), 404
