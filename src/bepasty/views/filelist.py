@@ -1,7 +1,7 @@
 import errno
 import pickle
 
-from flask import current_app, render_template
+from flask import current_app, render_template, request, make_response
 from flask.views import MethodView
 from werkzeug.exceptions import Forbidden
 
@@ -46,4 +46,8 @@ class FileListView(MethodView):
         if not may(LIST):
             raise Forbidden()
         files = sorted(file_infos(), key=lambda f: f[TIMESTAMP_UPLOAD], reverse=True)
+        if request.args.get('fragment') == '1':
+            response = make_response(render_template('_workspace_filelist.html', files=files))
+            response.headers['Cache-Control'] = 'no-store'
+            return response
         return render_template('filelist.html', files=files)

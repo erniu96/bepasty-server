@@ -1,12 +1,24 @@
+{% extends "index.html" if may(CREATE) else "_layout.html" %}
 {% import "_utils.html" as utils %}
-{% extends "_layout.html" %}
+{% set page_title = '文件列表' %}
 
-{% set page_title = 'All items' %}
+{% block body_class %}{% if may(CREATE) %}workspace-page library-entry{% endif %}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        {{ utils.filelist(files) }}
+{% if may(CREATE) %}{{ super() }}{% endif %}
+<section id="native-library" class="page-panel">
+    <div class="page-heading">
+        <h1>文件列表</h1>
+        <p>共 {{ files | length }} 项，最近上传的文件排在前面。</p>
     </div>
-</div>
+    {{ utils.filelist(files) }}
+</section>
 {% endblock content %}
+
+{% block extra_script %}
+{% if may(CREATE) %}
+{{ super() }}
+{% else %}
+<script src="{{ url_for('static', filename='app/js/share.js') }}"></script>
+{% endif %}
+{% endblock %}

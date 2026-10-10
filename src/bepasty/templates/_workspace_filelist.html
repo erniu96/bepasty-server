@@ -1,0 +1,3 @@
+{% import '_utils.html' as utils %}
+<p class="library-count">{{ files|length }} 项 · 最近上传的在前</p>
+{{ utils.filelist(files, workspace=True) }}

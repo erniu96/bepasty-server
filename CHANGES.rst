@@ -6,8 +6,13 @@ Unreleased
 
 Fixes:
 
+- keep ordinary single-file uploads and primary navigation available without
+  the enhanced browser APIs or JavaScript.
+- use the supported jQuery failure callback for upload cancellation and cleanup.
 - stop downloads with an error if the stored file ends unexpectedly.
 - preserve printable Unicode filenames and provide compatible download headers.
+- display upload preparation, validation and network failures with retry actions;
+  keep retry and delayed uploads working when the file input is replaced.
 - retain manual link copying when Clipboard API calls fail synchronously or
   return unsupported values, and explicitly select complete links on mobile.
 - reject uploads whose received file or chunk size differs from the declared
@@ -21,11 +26,19 @@ Other changes:
 
 - use 256 KiB storage transfer blocks to reduce upload and download loop overhead.
 - document transfer limits and add a reproducible storage microbenchmark.
+- simplify the upload page, show individual and combined upload progress, and
+  offer download and share links directly on completed uploads.
 - provide copyable share links with a manual-copy fallback, and improve
   narrow-screen layouts and media previews.
+- enlarge mobile action targets and share-link text, and remind uploaders to
+  keep the page in the foreground until transfers finish.
+- pause and resume enhanced uploads in the same page, including recovery after
+  a lost chunk or final response, using the server's confirmed upload position.
 - add an HTTP transfer benchmark with downloaded SHA-256 verification and cleanup.
 - default to passwordless access for the trusted local network, without login
   forms or permission icons; retain optional token authentication for API clients.
+- show separate file and text forms, retention presets, file information and
+  management controls directly; copy links and download directly from the list.
 - support iOS safe areas without limiting browser zoom.
 - remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
   advertise unlimited file size as JSON null while retaining numeric limits.
