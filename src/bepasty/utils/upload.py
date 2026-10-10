@@ -33,6 +33,7 @@ from .name import ItemName
 from .decorators import threaded
 from .hashing import compute_hash, hash_new
 from .http import sanitize_filename
+from .upload_lock import upload_lock
 
 # We limit to 250 characters as we do not want to accept arbitrarily long
 # filenames. Other than that, there is no specific reason we could not
@@ -185,7 +186,14 @@ def filter_internal(meta):
 
 @threaded
 def background_compute_hash(storage, name):
-    with storage.openwrite(name) as item:
+    # Open completed data under the lock, then hash without blocking resume
+    # status for a large file. Completed browser uploads cannot be overwritten.
+    with upload_lock(storage, name):
+        item = storage.open(name)
+    with item:
         size = item.meta[SIZE]
         file_hash = compute_hash(item.data, size)
+    # Reload metadata so changes made while hashing are not overwritten. Status
+    # reads must not see a half-written pickle while the final hash is saved.
+    with upload_lock(storage, name), storage.openwrite(name) as item:
         item.meta[HASH] = file_hash

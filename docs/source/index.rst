@@ -17,6 +17,7 @@ Contents
    user-cli
    quickstart
    install-tutorial
+   performance
    changelog
    project
    license

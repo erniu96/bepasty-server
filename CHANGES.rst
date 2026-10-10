@@ -8,12 +8,17 @@ Fixes:
 
 - stop downloads with an error if the stored file ends unexpectedly.
 - preserve printable Unicode filenames and provide compatible download headers.
+- reject uploads whose received file or chunk size differs from the declared
+  size before writing or reporting successful completion.
+- reject gaps, repeated chunks and writes to completed browser uploads; serialize
+  upload status, commits and cancellation across local filesystem workers.
 - reject negative or oversized metadata before creating storage, and check
   native uploads against configured size limits before copying their contents.
 
 Other changes:
 
 - use 256 KiB storage transfer blocks to reduce upload and download loop overhead.
+- document transfer limits and add a reproducible storage microbenchmark.
 - add an HTTP transfer benchmark with downloaded SHA-256 verification and cleanup.
 - remove the default 5 GB file cap; allow MAX_ALLOWED_FILE_SIZE = None and
   advertise unlimited file size as JSON null while retaining numeric limits.

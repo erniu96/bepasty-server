@@ -1,6 +1,7 @@
 FILENAME = 'filename'
 TYPE = 'type'
 TYPE_HINT = 'type-hint'
+WEB_UPLOAD_OFFSET = 'web-upload-offset'
 LOCKED = 'locked'
 SIZE = 'size'
 COMPLETE = 'complete'
@@ -15,4 +16,4 @@ FOREVER = -1
 TRANSACTION_ID = 'Transaction-ID'  # keep in sync with bepasty-cli
 
 # Used internally only
-internal_meta = [TYPE_HINT]
+internal_meta = [TYPE_HINT, WEB_UPLOAD_OFFSET]
