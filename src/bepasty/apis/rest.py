@@ -252,7 +252,7 @@ class ItemModifyView(ModifyView, RestBase):
     def error(self, item, error):
         raise Conflict(description=error)
 
-    def response(self, name):
+    def response(self, name, item):
         return make_response('{}', {'Content-Type': 'application/json'})
 
     def get_params(self):

@@ -27,6 +27,8 @@ Other changes:
 - listen on all IPv4 interfaces by default and provide a bash command.txt launcher.
 - honour X-Forwarded-Proto only from TRUSTED_SCHEME_PROXY_IPS, so share
   links use https behind a trusted TLS gateway.
+- require MODIFY (not CREATE) to rename, serialize renames with uploads,
+  allow changing the retention period and return JSON to enhanced pages.
 
 
 Release 1.2.2 (2025-05-06)
