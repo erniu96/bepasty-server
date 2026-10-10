@@ -17,6 +17,16 @@ def get_maxlife(data, underscore):
     :raises BadRequest: if provided values are invalid
     """
     unit_key = 'maxlife_unit' if underscore else 'maxlife-unit'
+    preset_key = 'maxlife_preset' if underscore else 'maxlife-preset'
+    if preset_key in data:
+        try:
+            unit, value = data[preset_key].split(':')
+            value = int(value)
+            if value < 1:
+                raise ValueError
+            return time_unit_to_sec(value, unit.upper())
+        except (AttributeError, ValueError, KeyError):
+            raise BadRequest(description=f'{preset_key} is incorrect')
     # Users can set DEFAULT_MAXLIFE_VALUE (int) and DEFAULT_MAXLIFE_UNIT (str).
     unit_default = current_app.config.get('DEFAULT_MAXLIFE_UNIT', 'MONTHS')
     unit = str(data.get(unit_key, unit_default)).upper()
