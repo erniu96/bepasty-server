@@ -398,6 +398,15 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
 .data audio { width: 100%; }
 .data iframe { width: 100%; min-height: 360px; border: 0; }
 .data > .text-content { margin: 0; font-size: 0.95rem; }
+.dual-radio { position: absolute; opacity: 0; pointer-events: none; }
+.dual-switch { display: inline-flex; gap: 6px; margin-bottom: 10px; }
+.dual-switch .btn { border: 1px solid var(--border); color: var(--text); }
+#dual-rendered:checked ~ .dual-switch label[for=dual-rendered],
+#dual-plain:checked ~ .dual-switch label[for=dual-plain] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dual-radio:focus-visible ~ .dual-switch { outline: 2px solid var(--accent); outline-offset: 2px; }
+.data .dual-rendered { display: block; height: 70vh; min-height: 360px; resize: vertical; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+#dual-plain:checked ~ .dual-rendered, #dual-rendered:checked ~ .dual-plain { display: none; }
+.dual-plain { margin: 0; font-size: 0.95rem; }
 .data > .file-list .file-row { padding: 12px 0; }
 .document-preview h2 { font-size: 1.1rem; margin: 0 0 8px; }
 .document-preview p { font-size: .875rem; color: var(--muted); margin: 0 0 16px; }

@@ -1,0 +1,10 @@
+<div class="dual-preview">
+    <input type="radio" name="dual-preview" id="dual-rendered" class="dual-radio" checked>
+    <input type="radio" name="dual-preview" id="dual-plain" class="dual-radio">
+    <div class="dual-switch" role="group" aria-label="预览方式">
+        <label for="dual-rendered" class="btn btn-sm">渲染</label>
+        <label for="dual-plain" class="btn btn-sm">纯文本</label>
+    </div>
+    <iframe class="dual-rendered" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" title="渲染预览" srcdoc="{{ doc }}"></iframe>
+    <pre class="text-content dual-plain">{{ text }}</pre>
+</div>

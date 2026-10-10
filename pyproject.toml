@@ -34,6 +34,7 @@ dependencies = [
     "Flask",
     "markupsafe",
     "Pygments >= 2.12.0",
+    "Markdown >= 3.4",
     "xstatic < 2.0.0",
     "XStatic-asciinema-player <= 2.6.1.1",
     "xstatic-bootbox >= 5.4.0, <= 5.5.1.1",

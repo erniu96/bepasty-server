@@ -60,6 +60,8 @@ Other changes:
   (AUTO_TITLES, TITLE_MODEL); the upload responds before the title is ready.
 - show the first lines of text files in the list and render .txt files
   as linked plain text.
+- preview Markdown and HTML documents rendered in a sandboxed frame, with a
+  switch to the plain text.
 
 
 Release 1.2.2 (2025-05-06)

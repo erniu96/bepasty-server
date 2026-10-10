@@ -14,7 +14,7 @@ from ..utils.date_funcs import delete_if_lifetime_over
 from ..utils.formatters import CustomHtmlFormatter
 from ..utils.permissions import ADMIN, READ, may
 
-from ..utils.text_preview import is_txt, linked_text
+from ..utils.text_preview import doc_kind, is_txt, linked_text, rendered_doc
 from .index import contenttypes_list
 from .filelist import file_infos
 
@@ -137,7 +137,11 @@ class DisplayView(MethodView):
                     except UnicodeDecodeError:
                         # Well, it is not UTF-8 or ASCII, so we can only guess...
                         text = text.decode('iso-8859-1')
-                    if is_txt(item.meta):
+                    kind = doc_kind(item.meta, text)
+                    if kind:
+                        rendered_content = Markup(render_template(
+                            '_dual_preview.html', text=linked_text(text), doc=rendered_doc(text, kind)))
+                    elif is_txt(item.meta):
                         rendered_content = Markup('<pre class="text-content">{}</pre>').format(linked_text(text))
                     else:
                         lexer = get_lexer_for_mimetype(ct_pygments)
