@@ -20,6 +20,19 @@ from ..views.modify import ModifyView
 from ..views.setkv import LockView, UnlockView
 
 
+def header_text(value):
+    """Recover a UTF-8 header value that WSGI decoded as latin-1.
+
+    Values that are not valid UTF-8 (plain latin-1 from older clients) are kept.
+    """
+    if value is None:
+        return None
+    try:
+        return value.encode('latin-1').decode('utf-8')
+    except UnicodeError:
+        return value
+
+
 # This wrapper handles exceptions in the REST API implementation.
 #
 # The @blueprint.add_errorhandler decorator could do this, but we have
@@ -140,7 +153,7 @@ class ItemUploadView(RestBase):
         # Collect all expected data from the Request
         file_type = request.headers.get("Content-Type")
         file_size = request.headers.get("Content-Length")
-        file_name = request.headers.get("Content-Filename")
+        file_name = header_text(request.headers.get("Content-Filename"))
 
         # Check the file size from Request
         Upload.filter_size(file_size)

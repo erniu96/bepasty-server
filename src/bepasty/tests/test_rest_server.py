@@ -460,6 +460,19 @@ def test_upload_params(client_fixture):
                                  download=True)
 
 
+def test_upload_utf8_filename(client_fixture):
+    _, client, _ = client_fixture
+
+    # WSGI hands raw UTF-8 header bytes over as latin-1 text
+    for sent, stored in (('中文 文件.txt'.encode().decode('latin-1'), '中文 文件.txt'),
+                         ('café.txt', 'café.txt')):
+        with _upload(client, UPLOAD_DATA, token='full', filename=sent) as response:
+            uri = check_upload_response(response)
+        url = RestUrl(os.path.basename(uri))
+        with client.get(url.detail, headers=add_auth('user', 'full')) as response:
+            assert response.json['file-meta'][FILENAME] == stored
+
+
 def test_upload_range(client_fixture):
     app, client, faketime = client_fixture
 
