@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='font_awesome', filename='css/fontawesome.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='font_awesome', filename='css/solid.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='font_awesome', filename='css/regular.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='app/css/style.css', v='20261009-ui2') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='app/css/style.css', v='20261014-library-width') }}">
     {% block extra_link %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -30,6 +30,19 @@
                     <a data-workspace-page="list" class="btn {% if request.endpoint == 'bepasty.filelist' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ url_for('bepasty.filelist') }}"{% if request.endpoint == 'bepasty.filelist' %} aria-current="page"{% endif %}>列表</a>
                     {% endif %}
                 </nav>
+                {% if not config.PASSWORDLESS %}
+                {% if flaskg.logged_in %}
+                <form method="post" action="{{ url_for('bepasty.logout') }}">
+                    <button type="submit" class="btn btn-outline-secondary">退出登录</button>
+                </form>
+                {% else %}
+                <form method="post" action="{{ url_for('bepasty.login') }}" class="form-inline">
+                    <label class="sr-only" for="login-token">访问密码</label>
+                    <input id="login-token" class="form-control" type="password" name="token" autocomplete="current-password" required placeholder="访问密码">
+                    <button type="submit" class="btn btn-outline-secondary">登录</button>
+                </form>
+                {% endif %}
+                {% endif %}
             </div>
         </header>
         <main id="main-content" class="container" tabindex="-1">

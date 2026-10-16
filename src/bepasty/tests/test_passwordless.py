@@ -174,9 +174,15 @@ def test_optional_password_mode_still_enforces_permissions(passwordless_client):
     app.config.update(PASSWORDLESS=False, SECRET_KEY='test-only-login-key',
                       SESSION_COOKIE_SECURE=False,
                       PERMISSIONS={'uploader': 'create,read', 'restricted': 'read'})
+    page = client.get('/').get_data(as_text=True)
+    assert 'action="/+login"' in page
+    assert 'name="token"' in page
     assert client.get('/+list').status_code == 403
     assert client.post('/+upload', data={'text': 'anonymous', 'filename': 'anonymous.txt'}).status_code == 403
     assert client.post('/+login', data={'token': 'uploader'}).status_code == 302
+    page = client.get('/').get_data(as_text=True)
+    assert 'action="/+logout"' in page
+    assert 'action="/+login"' not in page
     path, _ = native_upload(client)
     assert client.get(path + '/+download').data == b'file contents'
     assert client.get('/+list').status_code == 403

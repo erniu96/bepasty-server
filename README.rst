@@ -4,7 +4,34 @@ bepasty
 bepasty is like a pastebin for all kinds of files (text, image, audio, video,
 documents, ..., binary).
 
-The documentation is there:
+Trusted-network fork
+--------------------
+
+This fork adds a Chinese-language workspace, resumable browser uploads,
+Unicode filenames, document previews, optional local automatic titles and
+browser-side password encryption. Fork-specific documentation is in
+``docs/source/``; upstream hosted documentation does not describe these changes.
+
+.. warning::
+
+   Defaults differ from upstream: ``PASSWORDLESS = True`` grants every visitor
+   all permissions (including reading locked items, modifying and deleting),
+   the development server listens on all IPv4 interfaces, and
+   ``MAX_ALLOWED_FILE_SIZE = None`` removes the application file-size limit.
+   Use only on a trusted, access-controlled network. Do not expose these defaults
+   directly to the public Internet. For password-based access set
+   ``PASSWORDLESS = False``, a strong ``SECRET_KEY`` and explicit ``PERMISSIONS``;
+   also configure storage/request limits and appropriate network protection.
+   Encrypted shares protect content, not availability: other authorized visitors
+   can still delete ciphertext. Encryption is not a substitute for access control.
+
+Install dependencies into a virtual environment before running ``bash command.txt``.
+The launcher uses ``python3`` or the interpreter selected by ``PYTHON``; set
+``BEPASTY_CONFIG`` to your configuration file. It does not start a production WSGI
+server. Browser encryption requires HTTPS or localhost. Large encrypted downloads
+use Service Workers and still require device/browser-specific verification.
+
+Upstream documentation:
 https://bepasty-server.readthedocs.org/en/latest/
 
 Features

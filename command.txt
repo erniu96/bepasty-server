@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Install this repository's dependencies first. Configure BEPASTY_CONFIG as needed.
 set -euo pipefail
-BEPASTY_SERVER_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-exec bash "$BEPASTY_SERVER_ROOT/../command.txt" "$@"
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
+exec "${PYTHON:-python3}" -m bepasty.cli.server "$@"
