@@ -34,6 +34,14 @@
                     <select class="form-control" id="shared-maxlife" aria-label="文件和文字的保留时间"></select>
                 </div>
             </div>
+            <div id="encryption-options" class="encryption-options" hidden>
+                <label class="encryption-check" for="encrypt-enabled"><input id="encrypt-enabled" type="checkbox"> 加密</label>
+                <div id="encryption-password" hidden>
+                    <label class="sr-only" for="encrypt-password">加密密码</label>
+                    <input id="encrypt-password" class="form-control" type="password" autocomplete="new-password" placeholder="输入一次密码" aria-describedby="encryption-help">
+                </div>
+                <small id="encryption-help" hidden>文件和文字均在本地加密；密码请另行告知对方。大文件自动分块加密。</small>
+            </div>
             <section id="file-composer" class="upload-panel" aria-labelledby="fileupload-heading">
                 <h2 id="fileupload-heading" class="sr-only">上传文件</h2>
                 <form id="upload-form" action="{{ url_for('bepasty.upload') }}" method="post" enctype="multipart/form-data">
@@ -74,6 +82,7 @@
                     <p class="form-feedback" role="alert"></p>
                 </form>
             </section>
+
         </section>
         <section class="upload-results is-empty" aria-labelledby="upload-results-heading">
             <div class="results-heading">
@@ -101,6 +110,11 @@
             <h1 id="library-heading">文件列表</h1>
             <label class="sr-only" for="library-search">查找文件名</label>
             <input id="library-search" type="search" class="form-control" placeholder="查找文件名…" title="快捷键：/" autocomplete="off">
+            <label class="sr-only" for="library-filter">筛选</label>
+            <select id="library-filter" class="form-control" aria-label="筛选文件">
+                <option value="all">全部内容</option>
+                <option value="favorites">个人收藏（永久保存）</option>
+            </select>
             <button id="library-refresh" type="button" class="btn btn-outline-secondary" aria-label="刷新列表">刷新</button>
         </div>
         <p id="library-search-feedback" class="form-feedback" role="status" aria-live="polite"></p>
@@ -133,7 +147,9 @@
     MAX_BODY_SIZE = {{ config.MAX_BODY_SIZE }};
     UPLOAD_NEW_URL = {{ url_for('bepasty.upload_new')|tojson }};
 </script>
-<script src="{{ url_for('static', filename='app/js/qrcode.js') }}"></script>
-<script src="{{ url_for('static', filename='app/js/fileuploader.js') }}"></script>
-<script src="{{ url_for('static', filename='app/js/workspace.js') }}"></script>
+<script src="{{ url_for('static', filename='app/js/qrcode.js', v='20261013-viewbox') }}"></script>
+<script src="{{ url_for('static', filename='app/js/fileuploader.js', v='20261013-share-ui') }}"></script>
+<script src="{{ url_for('static', filename='app/js/workspace.js', v='20261013-favorites') }}"></script>
+<script src="{{ url_for('static', filename='app/js/crypto.js', v='stream-v2') }}"></script>
+<script src="{{ url_for('static', filename='app/js/encrypted.js', v='stream-v2') }}"></script>
 {% endblock %}

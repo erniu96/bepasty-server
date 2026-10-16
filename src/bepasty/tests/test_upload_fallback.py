@@ -93,7 +93,9 @@ def test_primary_navigation_needs_no_javascript(fallback_client):
     page = client.get('/').get_data(as_text=True)
     assert 'aria-label="主导航"' in page
     assert 'data-toggle="collapse"' not in page
-    assert 'type="password"' not in page
+    # Optional item encryption has password fields, but no login is required.
+    assert 'action="/+login"' not in page
+    assert 'name="password"' not in page
     assert 'autofocus' not in page
     assert '>上传</a>' in page
     assert '>列表</a>' in page

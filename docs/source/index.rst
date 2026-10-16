@@ -19,6 +19,7 @@ Contents
    install-tutorial
    performance
    mobile
+   encryption
    changelog
    project
    license

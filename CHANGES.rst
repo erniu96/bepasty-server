@@ -62,6 +62,14 @@ Other changes:
   as linked plain text.
 - preview Markdown and HTML documents rendered in a sandboxed frame, with a
   switch to the plain text.
+- add optional password-encrypted shares: files or text are encrypted in the
+  browser (PBKDF2-SHA-256 + chunked AES-256-GCM) and decrypted locally
+  on a password page; the server stores only ciphertext. Drops and pastes
+  use the shared encryption checkbox and never fall through to the plain uploader.
+
+- encrypted uploads now use bounded 512 KiB AES-GCM records (BEPAENC2),
+  with arbitrary-offset resume and no 128 MiB upload limit; large downloads
+  stream through a download-only Service Worker, retaining v1 read compatibility.
 
 
 Release 1.2.2 (2025-05-06)

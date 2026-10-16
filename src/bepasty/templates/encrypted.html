@@ -1,0 +1,27 @@
+{% extends '_layout.html' %}
+{% import '_utils.html' as utils %}
+{% set page_title = '加密分享' %}
+{% block content %}
+<section class="page-panel encrypted-page">
+    <h1>🔒 加密分享</h1>
+    <p>输入分享者提供的密码，在当前浏览器解密后预览或下载。服务器没有密码，无法恢复忘记的密码。请使用 HTTPS 访问。</p>
+    <p>密文大小：{{ utils.filesize(item.meta['size']) }} · 到期：{{ utils.expiry(item.meta['timestamp-max-life']) }}</p>
+    {{ utils.share_link(url_for('bepasty.display', name=name, _external=True)) }}
+    <form id="encrypted-unlock" class="decrypt-form" data-url="{{ url_for('bepasty.download', name=name, ciphertext=1) }}" data-worker="{{ url_for('static', filename='app/crypto-download/worker.js') }}" method="post">
+        <div class="form-group"><label for="decrypt-password">解密密码</label><input id="decrypt-password" type="password" autocomplete="off" class="form-control" required autofocus></div>
+        <div class="page-actions">
+            <button type="submit" class="btn btn-primary" disabled>解锁</button>
+            <button id="decrypt-lock" type="button" class="btn btn-outline-secondary">重新锁定</button>
+            <a id="decrypted-download" class="btn btn-primary" hidden>下载解密后的文件</a>
+        </div>
+    </form>
+    <p id="decrypt-status" role="status" aria-live="polite"></p>
+    <noscript>解密需要启用 JavaScript，密码不会提交到服务器。</noscript>
+</section>
+<section id="decrypted-panel" class="page-panel" hidden><div id="decrypted-preview" class="data"></div></section>
+{% endblock %}
+{% block extra_script %}
+<script src="{{ url_for('static', filename='app/js/share.js') }}"></script>
+<script src="{{ url_for('static', filename='app/js/crypto.js', v='stream-v2') }}"></script>
+<script src="{{ url_for('static', filename='app/js/encrypted.js', v='stream-v2') }}"></script>
+{% endblock %}

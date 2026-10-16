@@ -133,6 +133,7 @@ $(function () {
         state.failed = true;
         state.paused = false;
         state.phase = 'failed';
+        state.encryptionPassword = null;
         state.transfer = null;
         state.retryable = retryable;
         state.context.attr('class', 'alert alert-danger upload-item');
@@ -209,6 +210,7 @@ $(function () {
         state.failed = false;
         state.paused = false;
         state.phase = 'cancelled';
+        state.encryptionPassword = null;
         state.transfer = null;
         state.context.attr('class', 'alert alert-secondary upload-item');
         state.status.text('已取消');
@@ -245,7 +247,18 @@ $(function () {
         try {
             // File selection replaces the input, including while metadata/GET
             // requests are pending, so always resolve the currently-live widget.
-            var transfer = $('#fileupload').fileupload('send', data);
+            var transfer;
+            if (state.file.readEncrypted) {
+                transfer = window.BepastyEncryption.send(state.file, {
+                    url: state.url, offset: offset,
+                    progress: function (loaded) { if (current(state, attempt) && state.phase === 'uploading') { setProgress(state, loaded, state.file.size, false); } },
+                    chunk: function (end) { if (current(state, attempt) && state.phase === 'uploading') { state.confirmed = end; } },
+                    done: function (result) { if (current(state, attempt) && state.phase === 'uploading') { renderDone(state, result); } },
+                    fail: function (error) { if (current(state, attempt) && state.phase === 'uploading') {
+                        finishFailure(state, error.message || requestError(error, 'error', '上传'), false);
+                    } }
+                });
+            } else { transfer = $('#fileupload').fileupload('send', data); }
             if (current(state, attempt) && state.active) {
                 state.transfer = transfer;
                 jqXHR[state.name] = transfer;
@@ -313,6 +326,8 @@ $(function () {
             return;
         }
         state.completed = true;
+        // Finished rows retain metadata only, not the file, key or record cache.
+        if (state.file.readEncrypted) { delete state.file.readEncrypted; }
         state.active = false;
         state.failed = false;
         state.paused = false;
@@ -324,7 +339,7 @@ $(function () {
         updateControls(state);
         setProgress(state, state.file.size, state.file.size, true);
         state.progressContainer.hide();
-        var openLink = $('<a class="btn btn-outline-secondary alert-link" target="_blank" rel="noopener"/>')
+        var openLink = $('<a class="btn btn-outline-secondary" target="_blank" rel="noopener"/>')
             .prop('href', file.url).text('打开'),
             shareUrl = openLink.prop('href'),
             share = $('<div class="share-link"/>').appendTo(state.context),
@@ -334,7 +349,7 @@ $(function () {
         $('<button type="button" class="copy-link btn btn-primary"/>')
             .text('复制链接').appendTo(links);
         openLink.appendTo(links);
-        $('<a class="btn btn-outline-secondary alert-link"/>').prop('href', shareUrl.split('#')[0].replace(/\/$/, '') + '/+download')
+        $('<a class="btn btn-outline-secondary"/>').prop('href', shareUrl.split('#')[0].replace(/\/$/, '') + '/+download')
             .text('下载').appendTo(links);
         $('<small class="share-status" role="status" aria-live="polite"/>').appendTo(share);
         if (typeof qrcode === 'function') {
@@ -461,6 +476,11 @@ $(function () {
     // Text and collection forms use the same aligned result rows. A collection
     // never includes its own ID in the next collection's source list.
     window.BepastyUploads = {
+        addEncrypted: function (file, preset) {
+            var parts = preset.split(':');
+            $('#fileupload').fileupload('add', {files: [file], encryptionPrepared: true,
+                maxlife: {unit: parts[0], value: parts[1]}});
+        },
         addComplete: function (result, isCollection) {
             var file = result && result.files && result.files[0];
             if (!file || typeof file.filename !== 'string' || typeof file.name !== 'string' ||
@@ -500,38 +520,62 @@ $(function () {
     })
         .on('fileuploadadd', function (e, data) {
             // This runs before the plugin's default validation and auto-submit.
-            createState(data);
+            var state = createState(data);
+            state.encryptionEnabled = data.retryState ? data.retryState.encryptionEnabled : !!$('#encrypt-enabled').prop('checked');
+            state.encrypted = !!data.encryptionPrepared || !!(data.retryState && data.retryState.encrypted);
+            state.encryptionPassword = state.encryptionEnabled && !state.encrypted ? $('#encrypt-password').val() : null;
         })
         .on('fileuploadsubmit', function (e, data) {
             var state = data.uploadState || createState(data), file = state.file;
             if (state.cancelled) {
                 return false;
             }
-            $.ajax({
-                type: 'POST',
-                url: UPLOAD_NEW_URL,
-                data: JSON.stringify({filename: file.name, size: file.size, type: file.type,
-                    maxlife_unit: state.maxlife.unit, maxlife_value: state.maxlife.value}),
-                contentType: 'application/json',
-                success: function (result) {
-                    if (!result || !result.url || !result.name) {
-                        finishFailure(state, '服务器未返回上传地址，请重试。', true);
-                        return;
+            function uploadPrepared() {
+                file = state.file;
+                $.ajax({
+                    type: 'POST',
+                    url: UPLOAD_NEW_URL,
+                    data: JSON.stringify({filename: file.name, size: file.size, type: file.type,
+                        maxlife_unit: state.maxlife.unit, maxlife_value: state.maxlife.value}),
+                    contentType: 'application/json',
+                    success: function (result) {
+                        if (!result || !result.url || !result.name) {
+                            finishFailure(state, '服务器未返回上传地址，请重试。', true);
+                            return;
+                        }
+                        state.url = data.url = result.url;
+                        state.name = result.name;
+                        if (state.cancelled) {
+                            cleanup(state);
+                            return;
+                        }
+                        if (!state.superseded) {
+                            startTransfer(state, 0);
+                        }
+                    },
+                    error: function (xhr, textStatus) {
+                        finishFailure(state, requestError(xhr, textStatus, '准备上传'), true);
                     }
-                    state.url = data.url = result.url;
-                    state.name = result.name;
-                    if (state.cancelled) {
-                        cleanup(state);
-                        return;
-                    }
-                    if (!state.superseded) {
-                        startTransfer(state, 0);
-                    }
-                },
-                error: function (xhr, textStatus) {
-                    finishFailure(state, requestError(xhr, textStatus, '准备上传'), true);
+                });
+            }
+            if (state.encryptionEnabled && !state.encrypted) {
+                if (!window.BepastyEncryption) {
+                    finishFailure(state, '加密组件未加载，请刷新页面后重试。', true);
+                    return false;
                 }
-            });
+                state.status.text('正在本地加密…');
+                window.BepastyEncryption.prepare(file, state.encryptionPassword).then(function (sealed) {
+                    state.encryptionPassword = null;
+                    if (state.cancelled || state.superseded) { return; }
+                    state.file = data.files[0] = sealed;
+                    state.encrypted = true;
+                    state.status.text('正在上传密文…');
+                    uploadPrepared();
+                }, function (error) {
+                    state.encryptionPassword = null;
+                    finishFailure(state, error.message || '加密失败，请重试。', true);
+                });
+            } else { uploadPrepared(); }
             return false;
         })
         .on('fileuploaddone', function (e, data) {

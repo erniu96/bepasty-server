@@ -247,6 +247,22 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
 .workspace-enabled .collection-toolbar .retention-field,
 .workspace-enabled .file-toolbar { display: none; }
 
+/* Shared encryption option for the ordinary file and text upload controls. */
+.encryption-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+.encryption-options[hidden], .encryption-options [hidden] { display: none; }
+.encryption-check { display: inline-flex; align-items: center; gap: 7px; min-height: var(--tap); margin: 0; cursor: pointer; }
+.encryption-check input { width: 18px; height: 18px; }
+#encryption-password { flex: 1 1 180px; max-width: 320px; }
+#encrypt-password { font-size: 16px; }
+#encryption-help { flex-basis: 100%; color: var(--muted); }
+.encrypted-page h1 { font-size: 1.4rem; margin-bottom: 8px; }
+.encrypted-page > p { color: var(--muted); font-size: 0.9rem; }
+.decrypt-form { margin-top: 16px; }
+#decrypt-status { margin: 10px 0 0; font-size: 0.875rem; }
+#decrypt-status:empty { display: none; }
+#decrypted-preview > .text-content { margin: 0; }
+#decrypted-preview iframe { width: 100%; border: 0; }
+
 /* Results */
 .upload-results { margin-top: 16px; overflow: hidden; }
 .workspace-enabled .upload-results.is-empty { display: none; }
@@ -316,6 +332,7 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
     top: 0;
     z-index: 2;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
     padding: 12px 18px;
@@ -323,7 +340,9 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
     border-bottom: 1px solid var(--border);
 }
 .library-toolbar h1 { font-size: 1.15rem; margin: 0 6px 0 0; white-space: nowrap; }
-.library-toolbar input { flex: 1; min-width: 0; }
+.library-toolbar input { flex: 1 1 240px; min-width: min(240px, 100%); }
+.library-toolbar select { flex: 0 0 auto; width: auto; max-width: 100%; }
+.library-toolbar .btn { flex-shrink: 0; }
 .library-count { margin: 0; padding: 10px 18px 0; color: var(--muted); font-size: 0.8rem; }
 #library-feedback, #library-search-feedback { margin: 0; padding: 0 18px; }
 #library-feedback:not(:empty), #library-search-feedback:not(:empty) { padding-top: 10px; }
@@ -513,6 +532,8 @@ table.highlighttable { width: 100%; margin: 0; border: 1px solid var(--border); 
 
     .library-toolbar { padding: 10px 12px; flex-wrap: wrap; }
     .library-toolbar h1 { flex-basis: 100%; margin: 0; font-size: 1.05rem; }
+    .library-toolbar input { flex-basis: 100%; }
+    .library-toolbar select { flex: 1 1 auto; min-width: 0; }
     .library-count { padding: 8px 12px 0; }
     #library-feedback, #library-search-feedback { padding-left: 12px; padding-right: 12px; }
     #library-content .file-row { padding: 12px; }

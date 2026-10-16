@@ -52,17 +52,19 @@ $(function () {
 
     function filterList() {
         var query = $('#library-search').val().toLowerCase(), matched = 0;
+        var favorites = $('#library-filter').val() === 'favorites';
         $('#library-content .file-row').each(function () {
             var row = $(this);
-            var match = row.find('.file-row-name').text().toLowerCase().indexOf(query) !== -1;
+            var match = (!favorites || row.attr('data-permanent') === 'true') &&
+                row.find('.file-row-name').text().toLowerCase().indexOf(query) !== -1;
             row.toggle(match);
             matched += match ? 1 : 0;
         });
         var total = $('#library-content .file-row').length;
-        $('#library-content .library-count').text(query ?
+        $('#library-content .library-count').text(query || favorites ?
             '匹配 ' + matched + ' 项 / 共 ' + total + ' 项' :
             total + ' 项 · 最近上传的在前');
-        $('#library-search-feedback').text(query && !matched ? '没有匹配的文件，请换个关键词。' : '');
+        $('#library-search-feedback').text(!matched && (query || favorites) ? '没有符合筛选条件的内容。' : '');
     }
 
     function loadList() {
@@ -133,6 +135,11 @@ $(function () {
     }
 
     function submitForm(form, isCollection) {
+        if (!isCollection && $('#encrypt-enabled').prop('checked')) {
+            if (window.BepastyEncryption) { window.BepastyEncryption.submitText(form); }
+            else { form.find('.form-feedback').text('加密组件未加载，请刷新页面后重试。'); }
+            return;
+        }
         if (form.data('submitting')) {
             return;
         }
@@ -393,6 +400,7 @@ $(function () {
         }
     });
     $('#library-search').on('input keyup', filterList);
+    $('#library-filter').on('change', filterList);
     $('#library-refresh').on('click', loadList);
     $(document).on('keydown', function (event) {
         if (event.key === '/' && page === 'list' && !$(event.target).is('input, textarea, select')) {

@@ -458,6 +458,8 @@ var qrcode = function() {
       qrSvg += '<svg';
       qrSvg += ' width="' + size + 'px"';
       qrSvg += ' height="' + size + 'px"';
+      // CSS may resize the SVG; keep the full code and its quiet zone in view.
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '"';
       qrSvg += ' xmlns="http://www.w3.org/2000/svg"';
       qrSvg += '>';
       qrSvg += '<path d="';

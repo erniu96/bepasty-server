@@ -11,7 +11,7 @@ except ImportError:
 else:
     from PIL import Image
 
-from flask import Response, current_app, render_template, stream_with_context
+from flask import Response, current_app, redirect, render_template, request, stream_with_context, url_for
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, Forbidden
 
@@ -52,6 +52,8 @@ class DownloadView(MethodView):
         ret.headers['Content-Length'] = item.meta[SIZE]
         ret.headers['Content-Type'] = ct
         ret.headers['X-Content-Type-Options'] = 'nosniff'  # Yes, we really mean it
+        if item.meta[TYPE] == 'application/x-bepasty-encrypted':
+            ret.headers['Cache-Control'] = 'no-store'
         return ret
 
     def get(self, name):
@@ -74,6 +76,9 @@ class DownloadView(MethodView):
 
             if delete_if_lifetime_over(item, name):
                 raise NotFound()
+            if (item.meta[TYPE] == 'application/x-bepasty-encrypted'
+                    and request.args.get('ciphertext') != '1'):
+                return redirect(url_for('bepasty.display', name=name))
             need_close = False
         finally:
             if need_close:

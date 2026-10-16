@@ -156,6 +156,11 @@ function uploader(overrides = {}) {
     const sandbox = {$, window, MAX_BODY_SIZE: 1040384,
         MAX_ALLOWED_FILE_SIZE: overrides.unlimited ? null : 5000000000, UPLOAD_NEW_URL: '/+upload/new'};
     if (overrides.preset) $('[name=maxlife-preset]').val(overrides.preset);
+    if (overrides.encryption) {
+        $('#encrypt-enabled').prop('checked', true);
+        $('#encrypt-password').val('test-password');
+        if (overrides.encryption !== true) window.BepastyEncryption = overrides.encryption;
+    }
     vm.runInNewContext(source, sandbox);
     function replaceFileInput() {
         // The real blueimp _replaceFileInput clones its widget data to the new
@@ -717,4 +722,36 @@ for (const size of [0, 25]) {
     assert.strictEqual(status(page.cards()[0]), '已取消');
 }
 
-console.log('Uploader fallback, feedback, pause/resume, cancellation, progress and lost-response recovery checks passed.');
+{
+    const page = uploader({encryption: true});
+    page.select([file]);
+    assert.strictEqual(page.requests.length, 0, 'missing encryption module must never send plaintext');
+    assert.strictEqual(page.additions[0].uploadState.encryptionPassword, null);
+}
+
+{
+    let ready;
+    const sealed = {name: 'encrypted.bepenc', type: 'application/x-bepasty-encrypted', size: 200,
+        readEncrypted() {}};
+    const page = uploader({encryption: {
+        prepare(original, password) {
+            assert.strictEqual(original, file);
+            assert.strictEqual(password, 'test-password');
+            return {then(resolve) { ready = resolve; }};
+        }
+    }});
+    page.select([file]);
+    assert.strictEqual(page.requests.length, 0);
+    page.elements['#encrypt-enabled'].prop('checked', false);
+    ready(sealed);
+    assert.strictEqual(JSON.parse(page.requests[0].settings.data).type, sealed.type,
+        'unchecking encryption while preparing must not downgrade the upload');
+    assert.strictEqual(page.additions[0].uploadState.encryptionPassword, null);
+    page.requests[0].reject(500);
+    retry(page.cards()[0]).clicked();
+    assert.strictEqual(JSON.parse(page.requests[1].settings.data).type, sealed.type,
+        'retry must preserve the encrypted file');
+    assert.strictEqual(page.additions[1].uploadState.encryptionPassword, null);
+}
+
+console.log('Uploader fallback, feedback, pause/resume, cancellation, encryption gating and lost-response recovery checks passed.');

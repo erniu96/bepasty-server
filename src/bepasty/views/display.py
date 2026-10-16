@@ -71,6 +71,10 @@ class DisplayView(MethodView):
 
             size = item.meta[SIZE]
             ct = item.meta[TYPE]
+            if ct == 'application/x-bepasty-encrypted':
+                response = current_app.make_response(render_template('encrypted.html', name=name, item=item))
+                response.headers['Cache-Control'] = 'no-store'
+                return response
             try:
                 get_lexer_for_mimetype(ct)
                 use_pygments = True

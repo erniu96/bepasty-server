@@ -14,7 +14,7 @@
     {% for file in files %}
     {% set complete = file.get('complete', True) %}
     {% set has_thumb = complete and file['type'].startswith('image/') %}
-    <article class="file-row{% if has_thumb %} has-thumb{% endif %}" role="listitem" data-name="{{ file['id'] }}">
+    <article class="file-row{% if has_thumb %} has-thumb{% endif %}" role="listitem" data-name="{{ file['id'] }}" data-permanent="{{ 'true' if file.get('timestamp-max-life', -1) <= 0 else 'false' }}">
         {% if has_thumb %}
         <a class="file-thumbnail" href="{{ url_for('bepasty.display', name=file['id']) }}" tabindex="-1" aria-hidden="true"{% if workspace %} target="_blank" rel="noopener"{% endif %}>
             <img src="{{ url_for('bepasty.thumbnail', name=file['id']) }}" width="56" height="56" alt="" loading="lazy">
