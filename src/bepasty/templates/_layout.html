@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" content="#f5f7fa" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#11161d" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f9f9f9" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1d1d1f" media="(prefers-color-scheme: dark)">
     <link rel="icon" href="{{ url_for('static', filename='app/favicon.ico') }}" type="image/x-icon">
     <title>{% if page_title %}{{ page_title }} · {% endif %}Bepasty</title>
     <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='bootstrap', filename='css/bootstrap.min.css') }}">
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='font_awesome', filename='css/fontawesome.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='font_awesome', filename='css/solid.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('bepasty.xstatic', name='font_awesome', filename='css/regular.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='app/css/style.css', v='20261014-library-width') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='app/css/style.css', v='20261022-hig') }}">
     {% block extra_link %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
