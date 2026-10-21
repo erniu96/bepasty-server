@@ -9,7 +9,7 @@ except ImportError:
     # Pillow / PIL is optional
     PIL = None
 else:
-    from PIL import Image
+    from PIL import Image, ImageOps
 
 from flask import Response, current_app, redirect, render_template, request, stream_with_context, url_for
 from flask.views import MethodView
@@ -131,9 +131,13 @@ class ThumbnailView(InlineView):
 
         # Compute thumbnail data "on the fly"
         with BytesIO(item.data.read(sz, 0)) as img_bio, BytesIO() as thumbnail_bio:
-            with Image.open(img_bio) as img:
-                img.thumbnail(self.thumbnail_size)
-                img.save(thumbnail_bio, thumbnail_type)
+            with Image.open(img_bio) as source:
+                # Phone photos often store orientation in EXIF instead of pixels.
+                # Normalize before resizing; exif_transpose removes the old tag so
+                # browsers cannot rotate the generated thumbnail a second time.
+                with ImageOps.exif_transpose(source) as img:
+                    img.thumbnail(self.thumbnail_size)
+                    img.save(thumbnail_bio, thumbnail_type)
             thumbnail_data = thumbnail_bio.getvalue()
 
         stem, ext = os.path.splitext(fn)
