@@ -71,6 +71,16 @@ def test_all_list_actions_share_one_toolbar(page_client):
     labels = {c.get('aria-label') for c in controls}
     assert {'下载', '复制内容', '复制链接', '重命名', '删除'} <= labels
     assert 'compact-share' in html
+    assert controls[0].get('aria-label') == '复制内容'
+
+
+def test_optional_copy_content_does_not_reorder_other_actions(page_client):
+    upload(page_client, filename='archive.zip', content_type='application/zip')
+    html = page_client.get('/+list?fragment=1').get_data(as_text=True)
+    controls = ToolbarControls(html).controls
+    assert controls[0].get('name') == 'maxlife-preset'
+    assert [c['aria-label'] for c in controls if c.get('aria-label') in
+            {'下载', '复制内容', '复制链接', '重命名', '删除'}] == ['下载', '复制链接', '重命名', '删除']
 
 
 def test_list_without_modify_permission_has_no_editor(page_client):

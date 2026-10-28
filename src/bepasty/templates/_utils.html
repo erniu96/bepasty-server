@@ -42,6 +42,9 @@
             </p>
         </div>
         <div class="file-row-actions" role="group" aria-label="文件操作">
+            {% if complete %}
+            {{ copy_button(url_for('bepasty.download', name=file['id']), file['type'], file['size']) }}
+            {% endif %}
             {% if complete and may(MODIFY) %}
             <form class="list-expiry-form" action="{{ url_for('bepasty.modify', name=file['id']) }}" method="post">
                 <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
@@ -61,7 +64,6 @@
             {% endif %}
             {% if complete %}
             <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-outline-secondary" aria-label="下载" title="下载">{{ action_label('download', '下载') }}</a>
-            {{ copy_button(url_for('bepasty.download', name=file['id']), file['type'], file['size']) }}
             {{ share_link(url_for('bepasty.display', name=file['id'], _external=not workspace), compact=True) }}
             {% else %}
             <a href="{{ url_for('bepasty.index') }}" class="btn btn-outline-secondary">返回上传</a>
