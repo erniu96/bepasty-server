@@ -512,7 +512,6 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
 .file-row-actions:has(.manual-copy) { flex-wrap: wrap; }
 .compact-share.manual-copy { flex-basis: 100%; }
 @media (min-width: 1100px) {
-    body:has(#library-view:not([style*="display: none"])) { --page-width: 1440px; }
     #library-content .file-row { padding: 20px 24px; }
     .file-row-actions { gap: 10px; }
 }
