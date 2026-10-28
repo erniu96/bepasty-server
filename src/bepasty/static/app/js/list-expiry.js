@@ -10,7 +10,7 @@ $(function () {
         if (form.data('saving') || select.val() === 'keep') {
             return;
         }
-        var data = form.serialize(), status = form.find('.expiry-status');
+        var data = form.serialize(), status = row.find('.expiry-status');
         form.data('saving', true);
         select.prop('disabled', true);
         form.find('button').hide();

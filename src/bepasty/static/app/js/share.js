@@ -14,6 +14,7 @@ $(function () {
         }
     }
 
+    $('body').addClass('share-enhanced');
     $('.share-link .copy-link').show();
     $(document).on('click', '.share-link input', function () {
         selectLink(this);
@@ -28,8 +29,14 @@ $(function () {
             return;
         }
 
+        function label(text) {
+            var target = button.find('.action-label');
+            (target.length ? target : button).text(text);
+            button.attr('aria-label', text).attr('title', text);
+        }
+
         function copied() {
-            button.text('已复制');
+            label('已复制');
             status.text('链接已复制');
         }
 
@@ -43,7 +50,9 @@ $(function () {
             } catch (error) {
                 // The selected link remains available for manual copying.
             }
-            button.text('复制链接');
+            container.addClass('manual-copy');
+            selectLink(input);
+            label('复制链接');
             status.text('链接已选中，长按后选“复制”，或使用键盘复制。');
         }
 

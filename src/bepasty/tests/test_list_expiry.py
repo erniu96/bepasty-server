@@ -1,5 +1,6 @@
 """List expiry controls reuse partial modification and permission checks."""
 import time
+from html.parser import HTMLParser
 
 import pytest
 
@@ -40,6 +41,36 @@ def test_expiry_only_json_update(page_client, preset, seconds):
         assert start + seconds <= expiry <= int(time.time()) + seconds
     with page_client.application.storage.open(path[1:]) as item:
         assert item.meta[TIMESTAMP_MAX_LIFE] == expiry
+
+
+class ToolbarControls(HTMLParser):
+    def __init__(self, html):
+        super().__init__()
+        self.depth = 0
+        self.controls = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'div':
+            if self.depth or attrs.get('class') == 'file-row-actions':
+                self.depth += 1
+        if self.depth and tag in ('select', 'a', 'button'):
+            self.controls.append(attrs)
+
+    def handle_endtag(self, tag):
+        if tag == 'div' and self.depth:
+            self.depth -= 1
+
+
+def test_all_list_actions_share_one_toolbar(page_client):
+    upload(page_client)
+    html = page_client.get('/+list?fragment=1').get_data(as_text=True)
+    controls = ToolbarControls(html).controls
+    assert any(c.get('name') == 'maxlife-preset' for c in controls)
+    labels = {c.get('aria-label') for c in controls}
+    assert {'下载', '复制内容', '复制链接', '重命名', '删除'} <= labels
+    assert 'compact-share' in html
 
 
 def test_list_without_modify_permission_has_no_editor(page_client):
