@@ -470,8 +470,8 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
 .file-list { margin: 0; padding: 0; list-style: none; }
 .file-row {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas: "thumb info actions" "pre pre pre" "share share share";
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "thumb info" "pre pre" "actions actions" "status status";
     align-items: center;
     padding: 14px 0;
     border-bottom: .5px solid var(--border);
@@ -486,12 +486,38 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
 .file-row-meta { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }
 .file-row-meta span { display: inline-block; margin-right: 12px; }
 .file-state { color: var(--danger); }
-.file-row-actions { grid-area: actions; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: 16px; }
+.action-icon { display: none; flex-shrink: 0; }
+.file-row-actions { grid-area: actions; display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; justify-content: safe flex-end; gap: 6px; margin: 12px 0 0; }
+.file-row-actions > * { flex-shrink: 0; }
 .file-row-actions form { margin: 0; }
-.file-row-actions .btn { min-height: var(--tap-sm); padding: 4px 12px; font-size: 0.875rem; }
+.file-row-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tap-sm); padding: 4px 12px; font-size: .875rem; white-space: nowrap; }
+.file-row-actions .action-icon { display: block; }
+.file-row-actions .delete-form { margin-left: 6px; padding-left: 6px; border-left: 1px solid var(--border); }
+.file-row-actions .btn[aria-label="已复制"] { color: var(--accent); box-shadow: inset 0 0 0 1px currentColor; }
+.list-expiry-form { display: flex; align-items: center; gap: 6px; }
+.list-expiry-form label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: .875rem; }
+.list-expiry-form select.form-control:not([size]):not([multiple]) { width: 112px; min-height: var(--tap-sm); padding: 4px 10px; font-size: .875rem; }
+.list-expiry-enhanced .list-expiry-form button { display: none; }
+.expiry-status { grid-area: status; color: var(--muted); overflow-wrap: anywhere; }
+.expiry-status:not(:empty) { margin-top: 6px; }
 .file-row .text-head { grid-area: pre; }
-.file-row > .share-link { grid-area: share; margin: 10px 0 0; }
+.file-row .compact-share { margin: 0; }
 .file-row .share-link-label { display: none; }
+.file-row .compact-share .copy-link { min-width: 0; }
+.share-enhanced .compact-share:not(.manual-copy) input,
+.share-enhanced .compact-share:not(.manual-copy) .share-status {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.file-row-actions:has(.manual-copy) { flex-wrap: wrap; }
+.compact-share.manual-copy { flex-basis: 100%; }
+@media (min-width: 1100px) {
+    #library-content .file-row { padding: 20px 24px; }
+    .file-row-actions { gap: 10px; }
+}
+@media (hover: hover) {
+    .file-row:hover { background: var(--fill); }
+}
 .rename-input.form-control { min-height: var(--tap-sm); padding: 3px 8px; font-weight: 400; }
 .text-head, .text-content {
     color: var(--text);
@@ -623,7 +649,7 @@ table.highlighttable { width: 100%; margin: 0; border: .5px solid var(--border);
 .ui-autocomplete { z-index: 1065; }
 
 /* ---------- Narrow screens ---------- */
-@media (max-width: 640px) {
+@media (max-width: 672px) {
     :root { --gutter: 12px; }
     h1 { font-size: 1.3rem; }
     .site-brand { font-size: 1.15rem; }
@@ -664,15 +690,20 @@ table.highlighttable { width: 100%; margin: 0; border: .5px solid var(--border);
     #library-content .file-row { padding: 12px; }
     .file-row {
         grid-template-columns: auto minmax(0, 1fr);
-        grid-template-areas: "thumb info" "pre pre" "share share" "actions actions";
+        grid-template-areas: "thumb info" "pre pre" "actions actions" "status status";
     }
     .file-thumbnail img { width: 44px; height: 44px; }
-    .file-row-actions { margin: 8px 0 0; justify-content: stretch; flex-wrap: nowrap; }
-    .file-row-actions > .btn, .file-row-actions > form { flex: 1 1 0; min-width: 0; }
-    .file-row-actions .btn { width: 100%; padding-left: 4px; padding-right: 4px; }
+    .file-row-actions { margin: 10px 0 0; gap: 2px; overflow-x: auto; }
+    .file-row-actions .btn { width: 44px; height: 44px; min-width: 44px; padding: 0; }
+    .file-row-actions .delete-form { margin-left: 2px; padding-left: 2px; }
+    .file-row-actions .action-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+    .file-row-actions .list-expiry-form button { width: auto; padding: 0 8px; }
+    .list-expiry-form select.form-control:not([size]):not([multiple]) { width: 86px; min-height: 44px; padding-left: 8px; padding-right: 4px; }
     .file-row .share-link-controls { flex-wrap: nowrap; }
     .file-row .share-link-controls > input { flex-basis: auto; font-size: 14px; }
-    .file-row .share-link .copy-link { min-width: 0; }
+    body:not(.share-enhanced) .file-row-actions { flex-wrap: wrap; }
+    .file-row-actions .compact-share.manual-copy { flex-shrink: 1; min-width: 0; }
+    .file-row-actions .compact-share.manual-copy .share-link-controls { flex-wrap: wrap; }
 
     .file-overview, .file-preview, .file-details, .file-management { padding: 12px 14px; }
     .detail-enabled .file-title { font-size: 1.1rem; }

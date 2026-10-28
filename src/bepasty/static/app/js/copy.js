@@ -92,15 +92,20 @@
             return;
         }
         var label = '复制内容';
+        function setLabel(text) {
+            (button.querySelector('.action-label') || button).textContent = text;
+            button.setAttribute('aria-label', text);
+            button.setAttribute('title', text);
+        }
         button.disabled = true;
-        button.textContent = '复制中…';
+        setLabel('复制中…');
         copyContent(button.getAttribute('data-copy-src'), button.getAttribute('data-copy-kind')).then(function () {
-            button.textContent = '已复制';
+            setLabel('已复制');
         }, function () {
-            button.textContent = window.isSecureContext ? '复制失败' : '需 https';
+            setLabel(window.isSecureContext ? '复制失败' : '需 https');
         }).then(function () {
             button.disabled = false;
-            setTimeout(function () { button.textContent = label; }, 2000);
+            setTimeout(function () { setLabel(label); }, 2000);
         });
     });
 }());

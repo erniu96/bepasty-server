@@ -24,8 +24,11 @@ async function copy(options) {
         };
     }
     const status = {text(value) { result.status = value; }};
-    const container = {find(selector) { return selector === 'input' ? [input] : status; }};
-    const button = {closest() { return container; }, text(value) { result.label = value; }};
+    const container = {find(selector) { return selector === 'input' ? [input] : status; },
+        addClass(value) { result.containerClass = value; return this; }};
+    const label = {length: options.icon ? 1 : 0, text(value) { result.label = value; }};
+    const button = {closest() { return container; }, text(value) { result.label = value; },
+        find() { return label; }, attr() { return this; }};
     const document = {};
     if (options.legacy !== undefined) {
         document.execCommand = command => {
@@ -38,6 +41,7 @@ async function copy(options) {
     }
     function $(selector) {
         if (typeof selector === 'function') { selector(); return; }
+        if (selector === 'body') return {addClass() { return this; }};
         if (selector === document) {
             return {on(event, target, handler) { handlers[target] = handler; }};
         }
@@ -101,6 +105,10 @@ async function copy(options) {
     assert.ok(httpManual.status.indexOf('链接已选中') === 0);
     const oldSelection = await copy({legacy: true, selectionRange: true, rangeThrows: true});
     assert.strictEqual(oldSelection.label, '已复制', 'unsupported range preserves select() fallback');
+    const iconCopy = await copy({modern: true, icon: true});
+    assert.strictEqual(iconCopy.label, '已复制', 'update label without removing the icon');
+    const iconManual = await copy({legacy: false, icon: true});
+    assert.strictEqual(iconManual.containerClass, 'manual-copy', 'reveal URL when manual copying is needed');
     const inputClick = await copy({inputClick: true, selectionRange: true, selectNoop: true});
     assert.strictEqual(inputClick.selected, true, 'clicking a URL also selects its full text');
     assert.strictEqual(inputClick.clipboardCalls, 0);

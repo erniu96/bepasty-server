@@ -9,6 +9,16 @@
 {% if timestamp > 0 %}{{ timestamp | datetime }} UTC{% else %}永久保留{% endif %}
 {%- endmacro %}
 
+{% macro action_label(kind, label) -%}
+<svg class="action-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+{% if kind == 'download' %}<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>
+{% elif kind == 'copy' %}<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>
+{% elif kind == 'link' %}<path d="m10 13 4-4m-6 6-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m4 2 2-2a4 4 0 0 0-6-6l-4 4" transform="translate(3 2)"/>
+{% elif kind == 'rename' %}<path d="m14 5 5 5M4 20l5-1L21 7l-5-5L4 14z"/>
+{% elif kind == 'delete' %}<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/>{% endif %}
+</svg><span class="action-label">{{ label }}</span>
+{%- endmacro %}
+
 {% macro filelist(files, workspace=False) %}
 <div class="file-list" role="list">
     {% for file in files %}
@@ -27,31 +37,49 @@
             </h2>
             <p class="file-row-meta">
                 <span>{{ filesize(file['size']) }}</span>
-                <span>到期：{{ expiry(file.get('timestamp-max-life', -1)) }}</span>
+                <span>到期：<span class="current-expiry">{{ expiry(file.get('timestamp-max-life', -1)) }}</span></span>
                 {% if not complete %}<span class="file-state">上传未完成</span>{% endif %}
             </p>
         </div>
-        <div class="file-row-actions">
+        <div class="file-row-actions" role="group" aria-label="文件操作">
             {% if complete %}
-            <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-outline-secondary">下载</a>
             {{ copy_button(url_for('bepasty.download', name=file['id']), file['type'], file['size']) }}
+            {% endif %}
+            {% if complete and may(MODIFY) %}
+            <form class="list-expiry-form" action="{{ url_for('bepasty.modify', name=file['id']) }}" method="post">
+                <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
+                <label><span class="sr-only">有效期</span>
+                    <select name="maxlife-preset" class="form-control" aria-label="{{ file['filename'] or file['id'] }} 的有效期">
+                        <option value="keep">有效期</option>
+                        <option value="HOURS:1">从现在起 1 小时</option>
+                        <option value="DAYS:1">从现在起 1 天</option>
+                        <option value="WEEKS:1">从现在起 1 周</option>
+                        <option value="MONTHS:1">从现在起 1 个月</option>
+                        <option value="YEARS:1">从现在起 1 年</option>
+                        <option value="FOREVER:1">永久保留</option>
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-outline-secondary">保存有效期</button>
+            </form>
+            {% endif %}
+            {% if complete %}
+            <a href="{{ url_for('bepasty.download', name=file['id']) }}" class="btn btn-outline-secondary" aria-label="下载" title="下载">{{ action_label('download', '下载') }}</a>
+            {{ share_link(url_for('bepasty.display', name=file['id'], _external=not workspace), compact=True) }}
             {% else %}
             <a href="{{ url_for('bepasty.index') }}" class="btn btn-outline-secondary">返回上传</a>
             {% endif %}
             {% if complete and may(MODIFY) %}
-            <a href="{{ url_for('bepasty.modify', name=file['id']) }}" class="btn btn-outline-secondary rename-link"{% if workspace %} target="_blank" rel="noopener"{% endif %}>重命名</a>
+            <a href="{{ url_for('bepasty.modify', name=file['id']) }}" class="btn btn-outline-secondary rename-link"{% if workspace %} target="_blank" rel="noopener"{% endif %} aria-label="重命名" title="重命名">{{ action_label('rename', '重命名') }}</a>
             {% endif %}
             {% if may(DELETE) %}
             <form class="delete-form" action="{{ url_for('bepasty.delete', name=file['id']) }}" method="post"{% if workspace %} target="_blank"{% endif %}>
                 <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
-                <button type="submit" class="btn btn-outline-danger">{% if complete %}删除{% else %}取消并删除{% endif %}</button>
+                <button type="submit" class="btn btn-outline-danger" aria-label="{% if complete %}删除{% else %}取消并删除{% endif %}" title="删除">{{ action_label('delete', '删除' if complete else '取消并删除') }}</button>
             </form>
             {% endif %}
         </div>
         {% if file.get("text_head") is not none and "text_head" in file %}<pre class="text-head">{{ file["text_head"] }}</pre>{% endif %}
-        {% if complete %}
-        {{ share_link(url_for('bepasty.display', name=file['id'], _external=not workspace)) }}
-        {% endif %}
+        <small class="expiry-status" role="status" aria-live="polite"></small>
     </article>
     {% else %}
     <div class="empty-state">
@@ -100,12 +128,12 @@
 </form>
 {%- endmacro %}
 
-{% macro share_link(url) -%}
-<div class="share-link">
+{% macro share_link(url, compact=False) -%}
+<div class="share-link{% if compact %} compact-share{% endif %}">
     <p class="share-link-label">分享链接</p>
     <div class="share-link-controls">
         <input class="form-control" type="text" value="{{ url }}" readonly aria-label="分享链接" autocapitalize="none" spellcheck="false">
-        <button class="btn btn-primary copy-link" type="button" style="display: none">复制链接</button>
+        <button class="btn {{ 'btn-outline-secondary' if compact else 'btn-primary' }} copy-link" type="button" style="display: none" aria-label="复制链接" title="复制链接">{{ action_label('link', '复制链接') }}</button>
     </div>
     <small class="share-status d-block" role="status" aria-live="polite"></small>
 </div>
@@ -119,6 +147,6 @@
 {% macro copy_button(url, contenttype, size) -%}
 {% set ct = (contenttype or '').split(';')[0].strip() %}
 {% if size and size <= 20 * 1024 * 1024 and ((ct.startswith('text/') and not ct.startswith('text/x-bepasty-')) or ct.startswith('image/') or ct in ['application/json', 'application/xml', 'application/javascript', 'application/x-sh', 'application/x-yaml', 'application/yaml', 'application/toml', 'application/sql']) %}
-<button type="button" class="btn btn-outline-secondary copy-content" data-copy-src="{{ url }}" data-copy-kind="{{ 'image' if ct.startswith('image/') else 'text' }}">复制内容</button>
+<button type="button" class="btn btn-outline-secondary copy-content" data-copy-src="{{ url }}" data-copy-kind="{{ 'image' if ct.startswith('image/') else 'text' }}" aria-label="复制内容" title="复制内容">{{ action_label('copy', '复制内容') }}</button>
 {%- endif %}
 {%- endmacro %}
