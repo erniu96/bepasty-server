@@ -27,9 +27,27 @@
             </h2>
             <p class="file-row-meta">
                 <span>{{ filesize(file['size']) }}</span>
-                <span>到期：{{ expiry(file.get('timestamp-max-life', -1)) }}</span>
+                <span>到期：<span class="current-expiry">{{ expiry(file.get('timestamp-max-life', -1)) }}</span></span>
                 {% if not complete %}<span class="file-state">上传未完成</span>{% endif %}
             </p>
+            {% if complete and may(MODIFY) %}
+            <form class="list-expiry-form" action="{{ url_for('bepasty.modify', name=file['id']) }}" method="post">
+                <input type="hidden" name="next" value="{{ url_for('bepasty.filelist') }}">
+                <label>有效期
+                    <select name="maxlife-preset" class="form-control" aria-label="{{ file['filename'] or file['id'] }} 的有效期">
+                        <option value="keep">修改有效期…</option>
+                        <option value="HOURS:1">从现在起 1 小时</option>
+                        <option value="DAYS:1">从现在起 1 天</option>
+                        <option value="WEEKS:1">从现在起 1 周</option>
+                        <option value="MONTHS:1">从现在起 1 个月</option>
+                        <option value="YEARS:1">从现在起 1 年</option>
+                        <option value="FOREVER:1">永久保留</option>
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-outline-secondary">保存有效期</button>
+                <small class="expiry-status" role="status" aria-live="polite"></small>
+            </form>
+            {% endif %}
         </div>
         <div class="file-row-actions">
             {% if complete %}

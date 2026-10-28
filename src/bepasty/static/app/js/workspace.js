@@ -312,6 +312,11 @@ $(function () {
         }
     });
 
+    $('#library-content').on('expiry:updated', function () {
+        generation++;
+        filterList();
+    });
+
     // Library: rename in place and delete without leaving the page.
     $('#library-content').on('click', '.rename-link', function (event) {
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {

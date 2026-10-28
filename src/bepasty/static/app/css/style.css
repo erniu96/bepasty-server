@@ -489,6 +489,11 @@ summary { cursor: pointer; min-height: var(--tap); padding: 10px 0; font-weight:
 .file-row-actions { grid-area: actions; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: 16px; }
 .file-row-actions form { margin: 0; }
 .file-row-actions .btn { min-height: var(--tap-sm); padding: 4px 12px; font-size: 0.875rem; }
+.list-expiry-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
+.list-expiry-form label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: .875rem; }
+.list-expiry-form select.form-control:not([size]):not([multiple]) { width: auto; max-width: 100%; min-height: 44px; font-size: .875rem; }
+.list-expiry-enhanced .list-expiry-form button { display: none; }
+.expiry-status { color: var(--muted); overflow-wrap: anywhere; }
 .file-row .text-head { grid-area: pre; }
 .file-row > .share-link { grid-area: share; margin: 10px 0 0; }
 .file-row .share-link-label { display: none; }
